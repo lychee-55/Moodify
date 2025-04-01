@@ -1,3 +1,15 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
+/* 전체 배경색 및 기본 텍스트 색상 설정 */
+body {
+  @apply bg-background text-textColor;
+}
+
+.pacifico-regular {
+  font-family: 'Pacifico', cursive;
+  font-weight: 400;
+  font-style: normal;
+}
