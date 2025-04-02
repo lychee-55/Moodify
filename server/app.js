@@ -1,11 +1,48 @@
+require('dotenv').config();
 const express = require('express');
 const db = require('./models');
+const env = 'development';
+const cors = require('cors');
+const config = require('./config/config.json')[env];
+const passport = require('passport');
+const session = require('express-session');
 const app = express();
 const PORT = 8080;
 
 // 미들웨어 처리
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 1. CORS 설정 (프론트엔드 localhost:3000 허용)
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    credentials: true, // 쿠키 전송 허용
+  }),
+);
+
+// 2. 세션 설정 (1시간 후 만료)
+app.use(
+  session({
+    secret: config.sessionSecret, // 안전한 시크릿 키로 변경해야 함
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 60 * 60 * 1000, // 1시간 (밀리초 단위)
+      httpOnly: true,
+      secure: false, // 개발 환경에서는 false, 프로덕션에서는 true로 변경
+      // sameSite: 'lax',
+    },
+    // store: 나중에 Redis 등으로 교체 가능 (현재는 메모리 저장)
+  }),
+);
+
+// Passport 초기화
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport 설정 파일 로드
+require('./config/passport')();
 
 // router설정
 app.get('/', (req, res) => {
@@ -14,8 +51,12 @@ app.get('/', (req, res) => {
 
 const userRouter = require('./routes/user');
 const moodRouter = require('./routes/moodPosts');
+const likeNmarkRouter = require('./routes/likeNmark');
+const myPageRouter = require('./routes/myPage');
 app.use('/li/user', userRouter);
 app.use('/li/moodPost', moodRouter);
+app.use('/li/moodPost/favor', likeNmarkRouter);
+app.use('/li/moodPost/myPage', myPageRouter);
 
 db.sequelize
   .sync({ force: false })
@@ -24,7 +65,7 @@ db.sequelize
 
     app.listen(PORT, () => {
       console.log(`Server running on port http://localhost:${PORT}`);
-      console.log(`Current environment: ${process.env.NODE_ENV}`);
+      // console.log(`Current environment: ${process.env.NODE_ENV}`);
     });
   })
   .catch(err => {

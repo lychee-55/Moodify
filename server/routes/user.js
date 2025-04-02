@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controller/Cuser');
 
+router.get('/test', controller.getTest);
 // 회원가입
 router.post('/sign-up', controller.PostSignup);
 
+// 중복체크
 router.get('/check-nickname', controller.getCheckNickname);
 
 router.get('/check-email', controller.getCheckEmail);
@@ -13,6 +15,9 @@ router.get('/check-email', controller.getCheckEmail);
 router.post('/login', controller.postLogin);
 
 router.post('/kakao-login', controller.postKakaoLogin);
+
+// 세션확인
+router.get('/check-session', controller.getCheckAuth);
 
 // 로그아웃
 router.post('/logout', controller.postLogout);
