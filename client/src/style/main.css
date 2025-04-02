@@ -13,3 +13,21 @@ body {
   font-weight: 400;
   font-style: normal;
 }
+
+.slick-initialized {
+  width: 100%;
+}
+.slick-track {
+  height: 500px;
+  display: flex;
+  align-items: center;
+}
+.slick-current + .slick-active .book-cover {
+  width: 300px !important;
+}
+.slick-dots .slick-active button::before {
+  color: rgb(173, 107, 86) !important;
+}
+.slick-dots button::before {
+  color: rgb(117, 117, 117) !important;
+}
