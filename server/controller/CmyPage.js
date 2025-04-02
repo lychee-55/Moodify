@@ -1,9 +1,10 @@
 const db = require('../models');
 const express = require('express');
-const bcrypt = require('bcrypt');
 const axios = require('axios');
 const Posts = require('../models/Posts');
-const Likes = require('../models/Likes');
-const Marks = require('../models/Marks');
+const PostLikes = require('../models/PostLike');
+const Bookmarks = require('../models/Bookmark');
 
-exports.PostSignup = (req, res) => {};
+exports.getMyLikedMood = (req, res) => {};
+
+exports.getMyMarkedMood = (req, res) => {};
