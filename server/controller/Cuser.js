@@ -4,7 +4,11 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
 const User = db.UserModel;
+const passport = require('passport');
 const responseUtil = require('../utils/ResponseUtil');
+const env = 'development';
+const config = require(__dirname + '/../config/config.json')[env];
+const kakaoConfig = config.kakao;
 
 exports.getTest = (req, res) => {
   res.send({ message: 'test' });
@@ -147,7 +151,8 @@ exports.getCheckEmail = async (req, res) => {
 };
 
 exports.postLogin = (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
+  console.log('로그인 요청 데이터:', req.body); // 추가
+  passport.authenticate('local', async (err, user, info) => {
     if (err) {
       console.error('로그인 에러:', err);
       return res
@@ -178,6 +183,7 @@ exports.postLogin = (req, res, next) => {
             email: user.email,
             nickname: user.nickname,
             profile_image: user.profile_image,
+            auth_provider: user.auth_provider,
           },
         }),
       );
@@ -187,39 +193,179 @@ exports.postLogin = (req, res, next) => {
 
 // 로그인 상태 확인
 exports.getCheckAuth = (req, res) => {
-  if (req.isAuthenticated()) {
-    return res.status(200).send(
-      responseUtil('SUCCESS', '로그인 상태입니다.', {
-        user: {
-          email: req.user.email,
-          nickname: req.user.nickname,
-          profile_image: req.user.profile_image,
-        },
-      }),
-    );
-  }
+  try {
+    if (req.isAuthenticated()) {
+      console.log('세션 유지 중:', req.user.user_id);
 
-  return res
-    .status(401)
-    .send(responseUtil('ERROR', '로그인이 필요합니다.', null));
+      return res.status(200).send(
+        responseUtil('SUCCESS', '로그인 상태입니다.', {
+          user: {
+            email: req.user.email,
+            nickname: req.user.nickname,
+            profile_image: req.user.profile_image,
+          },
+        }),
+      );
+    }
+
+    // 세션이 없는 경우 (401 Unauthorized)
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인이 필요합니다.', null));
+  } catch (error) {
+    console.error('세션 확인 중 서버 에러:', error);
+    // 서버 오류 경우 (500 Internal Server Error)
+    return res
+      .status(500)
+      .send(
+        responseUtil(
+          'ERROR',
+          '서버 오류가 발생했습니다. 나중에 다시 시도해주세요.',
+          null,
+        ),
+      );
+  }
+};
+
+// 카카오 로그인
+// GET /li/user/kakao-login
+exports.getKakaoLogin = passport.authenticate('kakao');
+
+// GET /li/user/kakao/callback
+exports.getKakaoCallback = (req, res, next) => {
+  passport.authenticate(
+    'kakao',
+    { failureRedirect: '/li/user/login' },
+    (err, user) => {
+      if (err) return next(err);
+      if (!user) return res.redirect(`${kakaoConfig.clientUrl}/li/login`);
+
+      req.login(user, loginErr => {
+        if (loginErr) return next(loginErr);
+        return res.redirect(`${kakaoConfig.clientUrl}`);
+      });
+    },
+  )(req, res, next);
 };
 
 // 로그아웃
-
-exports.postKakaoLogin = (req, res) => {};
-
 exports.postLogout = (req, res) => {
-  req.logout();
-  req.session.destroy();
-  return res
-    .status(200)
-    .send(responseUtil('SUCCESS', '로그아웃 되었습니다.', null));
+  try {
+    req.logout(err => {
+      if (err) {
+        console.error('로그아웃 에러:', err);
+        return res
+          .status(500)
+          .send(
+            responseUtil(
+              'ERROR',
+              '로그아웃 처리 중 오류가 발생했습니다.',
+              null,
+            ),
+          );
+      }
+      req.session.destroy(() => {
+        res.clearCookie('connect.sid'); // 세션 쿠키 삭제
+      });
+      return res
+        .status(200)
+        .send(responseUtil('SUCCESS', '로그아웃 되었습니다.', null));
+    });
+  } catch (error) {
+    console.error('일반 로그아웃 에러:', error);
+    return res.status(500).json({ message: '일반반 로그아웃 실패' });
+  }
 };
 
-exports.postKakaoLogout = (req, res) => {};
+exports.postKakaoLogout = async (req, res) => {
+  try {
+    const user = req.user;
+    console.log('카카오 로그아웃:req.user', user);
+    if (!user || !user.access_token) {
+      return res.status(401).json({ message: '로그인 상태가 아닙니다.' });
+    }
+
+    // 🔹 1. 카카오 API 로그아웃 요청 (토큰 만료)
+    await axios.post('https://kapi.kakao.com/v1/user/logout', null, {
+      headers: { Authorization: `Bearer ${user.access_token}` },
+    });
+
+    // 🔹 2. 세션 및 토큰 삭제 (유저 정보는 유지)
+    await user.update({ access_token: null, refresh_token: null });
+
+    req.logout(err => {
+      if (err) return res.status(500).json({ message: '로그아웃 실패' });
+
+      req.session.destroy(() => {
+        res.clearCookie('connect.sid'); // 세션 쿠키 삭제
+        res.json({ message: '카카오 로그아웃 성공' });
+      });
+    });
+  } catch (error) {
+    console.error('카카오 로그아웃 에러:', error);
+    return res.status(500).json({ message: '카카오 로그아웃 실패' });
+  }
+};
 
 exports.getMyProfile = (req, res) => {};
 
 exports.postMyProfile = (req, res) => {};
 
-exports.deleteMyProfile = (req, res) => {};
+// 회원탈퇴
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.session?.passport?.user?.id;
+    if (!userId) {
+      return res.send(
+        responseUtil('ERROR', '로그인된 사용자가 없습니다.', null),
+      );
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.send(
+        responseUtil('ERROR', '사용자를 찾을 수 없습니다.', null),
+      );
+    }
+
+    // 🔹 카카오 로그인 사용자인 경우, 카카오 API에서 연결 해제
+    if (user.auth_provider === 'kakao') {
+      const accessToken = req.session?.passport?.user?.access_token;
+      if (!accessToken) {
+        return res.send(
+          responseUtil('ERROR', '카카오 액세스 토큰이 없습니다.', null),
+        );
+      }
+
+      await axios.post(
+        'https://kapi.kakao.com/v1/user/unlink',
+        {},
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+    }
+
+    // 🔹 DB에서 사용자 삭제 (소프트 삭제 X)
+    await user.destroy();
+
+    // 🔹 세션 및 쿠키 삭제
+    req.logout(err => {
+      if (err)
+        return res.send(responseUtil('ERROR', '로그아웃 중 오류 발생', null));
+
+      req.session.destroy(sessionErr => {
+        if (sessionErr)
+          return res.send(
+            responseUtil('ERROR', '세션 삭제 중 오류 발생', null),
+          );
+
+        res.clearCookie('connect.sid');
+        return res.send(
+          responseUtil('SUCCESS', '회원 탈퇴가 완료되었습니다.', null),
+        );
+      });
+    });
+  } catch (error) {
+    console.error('회원 탈퇴 중 오류 발생:', error);
+    return res.send(responseUtil('ERROR', '회원 탈퇴 중 오류 발생', null));
+  }
+};

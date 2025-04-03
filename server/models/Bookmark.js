@@ -1,4 +1,4 @@
-const BookMarkModel = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes) => {
   const Bookmark = sequelize.define(
     'Bookmark',
     {
@@ -63,4 +63,3 @@ const BookMarkModel = (sequelize, DataTypes) => {
 
   return Bookmark;
 };
-module.exports = BookMarkModel;

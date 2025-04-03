@@ -14,7 +14,9 @@ router.get('/check-email', controller.getCheckEmail);
 // 로그인
 router.post('/login', controller.postLogin);
 
-router.post('/kakao-login', controller.postKakaoLogin);
+router.get('/kakao-login', controller.getKakaoLogin);
+
+router.get('/kakao/callback', controller.getKakaoCallback);
 
 // 세션확인
 router.get('/check-session', controller.getCheckAuth);
@@ -30,6 +32,6 @@ router.get('/profile', controller.getMyProfile);
 router.post('/profile', controller.postMyProfile);
 
 //회원탈퇴
-router.post('/delete', controller.deleteMyProfile);
+router.post('/delete', controller.deleteUser);
 
 module.exports = router;
