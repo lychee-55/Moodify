@@ -2,9 +2,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import KakaoLogin from './KakaoLogin';
+import { login } from '../../store/modules/checkSessionSlice';
 
 export default function Login() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -20,12 +24,19 @@ export default function Login() {
           email: formData.email,
           password: formData.password,
         },
-        { withCredentials: true }, // 쿠키 전송을 위해 필요
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true, // 세션 사용 시 필수
+        },
       );
 
       if (response.data.status === 'SUCCESS') {
+        const { nickname, auth_provider } = response.data.data;
+
+        // Redux Store에 로그인 정보 저장
+        dispatch(login({ nickname, authProvider: auth_provider }));
+
         alert('로그인 성공!');
-        // 로그인 후 처리 (예: 홈으로 이동)
         navigate('/');
       } else {
         alert(response.data.message);
@@ -39,31 +50,10 @@ export default function Login() {
     }
   };
 
-  // 로그인 상태 확인 예시
-  const checkAuthStatus = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_SERVER}/li/user/auth/check-auth`,
-        { withCredentials: true },
-      );
-
-      if (response.data.status === 'SUCCESS') {
-        console.log('현재 로그인된 사용자:', response.data.data.user);
-      }
-    } catch (error) {
-      console.log('로그인 상태 확인 실패');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#fefaf6] flex flex-col items-center pt-16 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-md text-center mb-8">
         <h2 className="text-3xl font-extrabold text-gray-900">LOGIN</h2>
-        {/* <p className="mt-2 text-center text-sm text-gray-600">
-          Your <span className="pacifico-regular">mood</span>, your{' '}
-          <span className="pacifico-regular">way</span>. Log in to{' '}
-          <span className="pacifico-regular">Moodify</span>.
-        </p> */}
         <p className="mt-2 text-sm text-gray-600">
           <span className="pacifico-regular">Moodify</span>에 로그인하여 당신의
           무드를 공유하세요!
@@ -71,8 +61,7 @@ export default function Login() {
       </div>
       <div className=" mx-auto w-full max-w-md">
         <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
-          <form className="space-y-6" onClick={handleSubmit}>
-            {/* 이메일 입력 */}
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="email"
@@ -90,13 +79,16 @@ export default function Login() {
                   type="email"
                   autoComplete="email"
                   required
+                  value={formData.email}
+                  onChange={e =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#adcf56] focus:border-[#adcf56]"
                   placeholder="example@moodify.com"
                 />
               </div>
             </div>
 
-            {/* 비밀번호 입력 */}
             <div>
               <label
                 htmlFor="password"
@@ -114,13 +106,16 @@ export default function Login() {
                   type="password"
                   autoComplete="current-password"
                   required
+                  value={formData.password}
+                  onChange={e =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#adcf56] focus:border-[#adcf56]"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
-            {/* 비밀번호 찾기 */}
             <div className="flex items-center justify-end">
               <div className="text-sm">
                 <Link
@@ -133,7 +128,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* 로그인 버튼 */}
             <div>
               <button
                 type="submit"
@@ -143,7 +137,7 @@ export default function Login() {
               </button>
             </div>
           </form>
-          {/* 회원가입 링크 */}
+
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -151,18 +145,35 @@ export default function Login() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  아직 회원이 아니신가요?
+                  또는 소셜 계정으로 로그인
                 </span>
               </div>
             </div>
 
             <div className="mt-6">
-              <Link
-                to="/li/user/sign-up"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#adcf56] transition-colors"
-              >
-                회원가입 하기
-              </Link>
+              <KakaoLogin />
+            </div>
+
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">
+                    아직 회원이 아니신가요?
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Link
+                  to="/li/user/sign-up"
+                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#adcf56] transition-colors"
+                >
+                  회원가입 하기
+                </Link>
+              </div>
             </div>
           </div>
         </div>
