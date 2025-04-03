@@ -4,8 +4,11 @@ const db = require('./models');
 const env = 'development';
 const cors = require('cors');
 const config = require('./config/config.json')[env];
-const passport = require('passport');
+const passport = require('./config/passport');
+// require('./passport/kakaoStrategy');
 const session = require('express-session');
+// 카카오 로그인 전략 불러오기 (여기서 호출해야 함!)
+
 const app = express();
 const PORT = 8080;
 
@@ -41,9 +44,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Passport 설정 파일 로드
-require('./config/passport')();
-
 // router설정
 app.get('/', (req, res) => {
   res.json({ msg: 'Index' });
@@ -58,17 +58,25 @@ app.use('/li/moodPost', moodRouter);
 app.use('/li/moodPost/favor', likeNmarkRouter);
 app.use('/li/moodPost/myPage', myPageRouter);
 
-db.sequelize
-  .sync({ force: false })
-  .then(() => {
-    console.log('DB connected!');
+async () => {
+  try {
+    await db.sequelize
+      .sync({ force: false })
+      .then(() => {
+        console.log('DB connected!');
+        console.log('✅ Sequelize 모델 목록:', db.sequelize.models);
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port http://localhost:${PORT}`);
-      // console.log(`Current environment: ${process.env.NODE_ENV}`);
-    });
-  })
-  .catch(err => {
-    console.log('db connection error!');
+        app.listen(PORT, () => {
+          console.log(`Server running on port http://localhost:${PORT}`);
+          // console.log(`Current environment: ${process.env.NODE_ENV}`);
+        });
+      })
+      .catch(err => {
+        console.log('db connection error!');
+        console.log(err);
+      });
+  } catch (error) {
+    console.log('db async error');
     console.log(err);
-  });
+  }
+};

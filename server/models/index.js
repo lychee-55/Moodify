@@ -4,8 +4,8 @@
 // const path = require('path');
 // const basename = path.basename(__filename);
 const Sequelize = require('sequelize');
-const process = require('process');
-const env = process.env.NODE_ENV || 'development';
+// const process = require('process');
+const env = 'development';
 const config = require(__dirname + '/../config/config.json')[env];
 const db = {};
 
@@ -19,50 +19,70 @@ const sequelize = new Sequelize(
 
 // (2) 모델을 불러오면서 인자로 정보 전달
 // (4) db객체에 모델 추가
-db.UserModel = require('./User')(sequelize, Sequelize.DataTypes);
-db.PostModel = require('./Posts')(sequelize, Sequelize.DataTypes);
-db.PostLikeModel = require('./PostLike')(sequelize, Sequelize.DataTypes);
-db.BookmarkModel = require('./Bookmark')(sequelize, Sequelize.DataTypes);
-db.CommentModel = require('./Comment')(sequelize, Sequelize.DataTypes);
+db.User = require('./User')(sequelize, Sequelize.DataTypes);
+db.Post = require('./Posts')(sequelize, Sequelize.DataTypes);
+db.PostLike = require('./PostLike')(sequelize, Sequelize.DataTypes);
+db.Bookmark = require('./Bookmark')(sequelize, Sequelize.DataTypes);
+db.Comment = require('./Comment')(sequelize, Sequelize.DataTypes);
+
+console.log('✅ User 모델 확인:', db.User);
+console.log('✅ sequelize.models:', sequelize.models);
+console.log('✅ User 모델의 클래스 확인:', db.User instanceof Sequelize.Model);
+
+// fs.readdirSync(__dirname)
+//   .filter(file => file !== 'index.js' && file.endsWith('.js'))
+//   .forEach(file => {
+//     const model = require(path.join(__dirname, file))(
+//       sequelize,
+//       Sequelize.DataTypes,
+//     );
+//     db[model.name] = model;
+//   });
+
+// Object.keys(db).forEach(modelName => {
+//   if (db[modelName].associate) {
+//     db[modelName].associate(db);
+//   }
+// });
 
 // (3) 모델간 관계 설정
 // 🌟 1. User(사용자) - Post(게시글) : 1:N 관계
-db.UserModel.hasMany(db.PostModel, {
+db.User.hasMany(db.Post, {
   foreignKey: 'user_id',
   as: 'posts',
   onDelete: 'CASCADE',
 });
-db.PostModel.belongsTo(db.UserModel, {
+db.Post.belongsTo(db.User, {
   foreignKey: 'user_id',
   as: 'author',
 });
 
-// 🌟 2. User - PostLike 관계 (M:N through PostLikeModel)
-db.UserModel.belongsToMany(db.PostModel, {
-  through: db.PostLikeModel,
+// 🌟 2. User - PostLike 관계 (M:N through PostLike)
+db.User.belongsToMany(db.Post, {
+  through: db.PostLike,
   as: 'likedPosts',
   foreignKey: 'user_id',
   otherKey: 'post_id',
   onDelete: 'CASCADE',
 });
-db.PostModel.belongsToMany(db.UserModel, {
-  through: db.PostLikeModel,
+db.Post.belongsToMany(db.User, {
+  through: db.PostLike,
   as: 'likedByUsers',
   foreignKey: 'post_id',
   otherKey: 'user_id',
   onDelete: 'CASCADE',
 });
 
-// 🌟 3. User - Bookmark 관계 (M:N through BookmarkModel)
-db.UserModel.belongsToMany(db.PostModel, {
-  through: db.BookmarkModel,
+// 🌟 3. User - Bookmark 관계 (M:N through Bookmark)
+db.User.belongsToMany(db.Post, {
+  through: db.Bookmark,
   as: 'bookmarkedPosts',
   foreignKey: 'user_id',
   otherKey: 'post_id',
   onDelete: 'CASCADE',
 });
-db.PostModel.belongsToMany(db.UserModel, {
-  through: db.BookmarkModel,
+db.Post.belongsToMany(db.User, {
+  through: db.Bookmark,
   as: 'bookmarkedByUsers',
   foreignKey: 'post_id',
   otherKey: 'user_id',
@@ -70,67 +90,67 @@ db.PostModel.belongsToMany(db.UserModel, {
 });
 
 // 🌟 4. User - Comment 관계 (1:N)
-db.UserModel.hasMany(db.CommentModel, {
+db.User.hasMany(db.Comment, {
   foreignKey: 'user_id',
   as: 'comments',
   onDelete: 'CASCADE',
 });
-db.CommentModel.belongsTo(db.UserModel, {
+db.Comment.belongsTo(db.User, {
   foreignKey: 'user_id',
   as: 'commenter',
 });
 
 // 🌟 5. Post - Comment 관계 (1:N)
-db.PostModel.hasMany(db.CommentModel, {
+db.Post.hasMany(db.Comment, {
   foreignKey: 'post_id',
   as: 'postComments',
   onDelete: 'CASCADE',
 });
-db.CommentModel.belongsTo(db.PostModel, {
+db.Comment.belongsTo(db.Post, {
   foreignKey: 'post_id',
   as: 'post',
 });
 
 // 🌟 6. Post - PostLike 관계 (1:N)
-db.PostModel.hasMany(db.PostLikeModel, {
+db.Post.hasMany(db.PostLike, {
   foreignKey: 'post_id',
   as: 'postLikes',
   onDelete: 'CASCADE',
 });
-db.PostLikeModel.belongsTo(db.PostModel, {
+db.PostLike.belongsTo(db.Post, {
   foreignKey: 'post_id',
   as: 'post',
 });
 
 // 🌟 7. User - PostLike 관계 (1:N)
-db.UserModel.hasMany(db.PostLikeModel, {
+db.User.hasMany(db.PostLike, {
   foreignKey: 'user_id',
   as: 'givenLikes',
   onDelete: 'CASCADE',
 });
-db.PostLikeModel.belongsTo(db.UserModel, {
+db.PostLike.belongsTo(db.User, {
   foreignKey: 'user_id',
   as: 'user',
 });
 
 // 🌟 8. Post - Bookmark 관계 (1:N)
-db.PostModel.hasMany(db.BookmarkModel, {
+db.Post.hasMany(db.Bookmark, {
   foreignKey: 'post_id',
   as: 'postBookmarks',
   onDelete: 'CASCADE',
 });
-db.BookmarkModel.belongsTo(db.PostModel, {
+db.Bookmark.belongsTo(db.Post, {
   foreignKey: 'post_id',
   as: 'post',
 });
 
 // 🌟 9. User - Bookmark 관계 (1:N)
-db.UserModel.hasMany(db.BookmarkModel, {
+db.User.hasMany(db.Bookmark, {
   foreignKey: 'user_id',
   as: 'myBookmarks',
   onDelete: 'CASCADE',
 });
-db.BookmarkModel.belongsTo(db.UserModel, {
+db.Bookmark.belongsTo(db.User, {
   foreignKey: 'user_id',
   as: 'user',
 });

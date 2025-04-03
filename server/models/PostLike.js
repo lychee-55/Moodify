@@ -1,4 +1,4 @@
-const PostLikeModel = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes) => {
   const PostLike = sequelize.define(
     'PostLike',
     {
@@ -63,4 +63,3 @@ const PostLikeModel = (sequelize, DataTypes) => {
 
   return PostLike;
 };
-module.exports = PostLikeModel;

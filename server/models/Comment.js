@@ -1,4 +1,4 @@
-const CommentModel = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes) => {
   const Comment = sequelize.define(
     'Comment',
     {
@@ -45,5 +45,3 @@ const CommentModel = (sequelize, DataTypes) => {
 
   return Comment;
 };
-
-module.exports = CommentModel;
