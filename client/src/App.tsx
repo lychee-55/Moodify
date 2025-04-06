@@ -6,6 +6,9 @@ import MainPage from './pages/MainPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import CreateMoodPage from './pages/CreateMoodPage';
+import MyPage from './pages/MyPage';
+import MyLikes from './components/myPageComp/MyLikes';
+import MyBookmarks from './components/myPageComp/MyBookmarks';
 
 function App() {
   return (
@@ -19,6 +22,10 @@ function App() {
             <Route path="/" element={<MainPage />} />
             <Route path="/li/user/login" element={<LoginPage />} />
             <Route path="/li/user/sign-up" element={<SignupPage />} />
+            <Route path="/li/user/myPage" element={<MyPage />}>
+              <Route path="like" element={<MyLikes />} />
+              <Route path="bookmark" element={<MyBookmarks />} />
+            </Route>
             <Route path="/li/moodPosts/create" element={<CreateMoodPage />} />
           </Routes>
         </div>
