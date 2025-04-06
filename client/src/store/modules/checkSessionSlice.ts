@@ -2,17 +2,17 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface CheckSessionState {
-  nickname: string | null;
-  authProvider: string | null; // 'kakao' | 'email'
   sessionValid: boolean;
   showAlert: boolean; // 특정 컴포넌트에서만 alert 여부 관리
+  nickname: string | null;
+  authProvider: string | null; // 'kakao' | 'email'
 }
 
 const initialState: CheckSessionState = {
-  nickname: null,
-  authProvider: null,
   sessionValid: false,
   showAlert: true, // 기본값은 alert를 띄우도록 설정
+  nickname: null,
+  authProvider: null,
 };
 
 const checkSessionSlice = createSlice({

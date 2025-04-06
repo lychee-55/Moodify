@@ -21,10 +21,6 @@ export default function Signup() {
     password: '',
     confirmPassword: '',
   });
-  //   const [email, setEmail] = useState('');
-  //   const [nickname, setNickname] = useState('');
-  //   const [password, setPassword] = useState('');
-  //   const [confirmPassword, setConfirmPassword] = useState('');
   const [emailStatus, setEmailStatus] = useState<
     'idle' | 'checking' | 'valid' | 'invalid'
   >('idle');
@@ -52,10 +48,6 @@ export default function Signup() {
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_SERVER}/li/user/check-email?email=${formData.email}`,
-        // {
-        //   params: { email: formData.email },
-        //   withCredentials: true,
-        // },
       );
       console.log(response.data);
       if (response.data.status === 'SUCCESS') {

@@ -1,58 +1,75 @@
+// 로그인 상태 확인 예시
+// const checkAuthStatus = async () => {
+//   try {
+//     const response = await axios.get(
+//       `${process.env.REACT_APP_API_SERVER}/li/user/check-session`,
+//       { withCredentials: true },
+//     );
+
+//     console.log('현재 로그인된 사용자:', response.data);
+
+//     if (response.data.status === 'SUCCESS') {
+//       setIsLoggedIn(true);
+//       setUserData(response.data.data.user);
+//     }
+//   } catch (error) {
+//     setIsLoggedIn(false);
+//     setUserData(null);
+
+//     if (axios.isAxiosError(error)) {
+//       // 서버에서 명시적으로 반환한 에러 (401: 로그인 필요)
+//       if (error.response?.status === 401) {
+//         alert('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동합니다.');
+//         // 로그인 페이지로 리다이렉트
+//         navigate('/li/user/login');
+//       }
+//       // 서버 오류 (500 등)
+//       else if (error.response?.status === 500) {
+//         alert('서버에 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.');
+//       }
+//       // 기타 네트워크 오류
+//       else {
+//         console.error('로그인 상태 확인 실패:', error);
+//         alert(
+//           '서버 연결에 문제가 발생했습니다.\n인터넷 연결을 확인해주세요.',
+//         );
+//       }
+//     } else {
+//       console.error('예상치 못한 에러:', error);
+//       alert('알 수 없는 오류가 발생했습니다.');
+//     }
+//   }
+// };
+// // 컴포넌트 마운트 시 세션 확인
+// useEffect(() => {
+//   checkAuthStatus();
+// }, []);
+
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, LogIn, LogOut } from 'lucide-react';
+import { Search, LogIn, LogOut, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
-import SessionChecker from './SessionChecker';
+import { RootState } from '../../store/store';
+import { logout } from '../../store/modules/checkSessionSlice';
+import useCheckSession from '../../hook/useCheckSession';
 
 export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  // 로그인 상태 확인 예시
-  const checkAuthStatus = async () => {
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_SERVER}/li/user/check-session`,
-        { withCredentials: true },
-      );
+  useCheckSession();
 
-      console.log('현재 로그인된 사용자:', response.data);
+  // Redux 상태에서 sessionValid 가져오기
+  const sessionValid = useSelector(
+    (state: RootState) => state.checkSession.sessionValid,
+  );
 
-      if (response.data.status === 'SUCCESS') {
-        setIsLoggedIn(true);
-        setUserData(response.data.data.user);
-      }
-    } catch (error) {
-      setIsLoggedIn(false);
-      setUserData(null);
-
-      if (axios.isAxiosError(error)) {
-        // 서버에서 명시적으로 반환한 에러 (401: 로그인 필요)
-        if (error.response?.status === 401) {
-          alert('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동합니다.');
-          // 로그인 페이지로 리다이렉트
-          navigate('/li/user/login');
-        }
-        // 서버 오류 (500 등)
-        else if (error.response?.status === 500) {
-          alert('서버에 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.');
-        }
-        // 기타 네트워크 오류
-        else {
-          console.error('로그인 상태 확인 실패:', error);
-          alert(
-            '서버 연결에 문제가 발생했습니다.\n인터넷 연결을 확인해주세요.',
-          );
-        }
-      } else {
-        console.error('예상치 못한 에러:', error);
-        alert('알 수 없는 오류가 발생했습니다.');
-      }
-    }
-  };
+  const authProvider = useSelector(
+    (state: RootState) => state.checkSession.authProvider,
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,45 +79,37 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // // 컴포넌트 마운트 시 세션 확인
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
   // 로그아웃 처리 함수
   const handleLogout = async () => {
     try {
-      await axios.post(
-        `${process.env.REACT_APP_API_SERVER}/li/user/logout`,
-        {},
-        { withCredentials: true },
-      );
-      setIsLoggedIn(false);
-      setUserData(null);
+      console.log('auth가 뭔지 알려줘::', authProvider);
+      const url =
+        authProvider === 'kakao'
+          ? `${process.env.REACT_APP_API_SERVER}/li/user/kakao-logout`
+          : `${process.env.REACT_APP_API_SERVER}/li/user/logout`;
+
+      await axios.post(url, {}, { withCredentials: true });
+      dispatch(logout()); // Redux 상태 초기화
       alert('로그아웃에 성공하였습니다.');
       navigate('/');
     } catch (error) {
       console.error('로그아웃 실패:', error);
+      alert('로그아웃 중 오류가 발생했습니다.');
     }
   };
 
   return (
     <>
-      {/* <SessionChecker /> */}
-      {/* 헤더 - 모바일/태블릿: px-8, 데스크톱: px-16 */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 md:px-16 py-4 transition-all ${
           isScrolled ? 'bg-background/90 backdrop-blur-sm' : 'bg-background'
         }`}
       >
-        {/* 왼쪽: 로고 */}
         <h1 className="text-xl pacifico-regular">
           <Link to="/">Moodify</Link>
         </h1>
 
-        {/* 가운데: 검색창 (데스크톱 전용) */}
         <div className="hidden md:block relative flex-1 max-w-xs mx-4 lg:max-w-md">
-          {/* <div className="hidden md:block relative flex-1 max-w-md mx-4"> */}
           <input
             type="text"
             placeholder="검색어를 입력하세요..."
@@ -112,9 +121,8 @@ export default function Header() {
           />
         </div>
 
-        {/* 오른쪽: 네비게이션 */}
+        {/* 네비게이션 메뉴 */}
         <div className="flex items-center gap-4">
-          {/* 모바일 검색 아이콘 */}
           <button
             className="md:hidden p-2"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -122,15 +130,15 @@ export default function Header() {
             <Search size={20} />
           </button>
 
-          {/* 데스크톱 로그인/회원가입 */}
+          {/* 로그인 여부에 따라 메뉴 변경 */}
           <div className="hidden md:flex gap-4">
-            {isLoggedIn ? (
+            {sessionValid ? (
               <>
                 <Link
-                  to="/li/user/my-profile"
+                  to="/li/user/myPage"
                   className="font-bold px-4 py-2 rounded-md hover:bg-[#e0dad4] transition"
                 >
-                  My Profile
+                  My Page
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -158,12 +166,26 @@ export default function Header() {
           </div>
 
           {/* 모바일 로그인/로그아웃 아이콘 */}
-          {isLoggedIn ? (
-            <button onClick={handleLogout} className="md:hidden p-2">
-              <LogOut size={20} />
-            </button>
+          {sessionValid ? (
+            <>
+              {/* 🔹 모바일 마이페이지 아이콘 */}
+              <Link
+                to="/li/user/myPage"
+                className="md:hidden p-2"
+                title="마이페이지"
+              >
+                <User size={20} />
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="md:hidden p-2"
+                title="로그아웃"
+              >
+                <LogOut size={20} />
+              </button>
+            </>
           ) : (
-            <Link to="/li/user/login" className="md:hidden p-2">
+            <Link to="/li/user/login" className="md:hidden p-2" title="로그인">
               <LogIn size={20} />
             </Link>
           )}

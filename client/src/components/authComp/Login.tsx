@@ -31,7 +31,7 @@ export default function Login() {
       );
 
       if (response.data.status === 'SUCCESS') {
-        const { nickname, auth_provider } = response.data.data;
+        const { nickname, auth_provider } = response.data.data.user;
 
         // Redux Store에 로그인 정보 저장
         dispatch(login({ nickname, authProvider: auth_provider }));
