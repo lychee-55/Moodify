@@ -4,9 +4,9 @@ const db = require('./models');
 const env = 'development';
 const cors = require('cors');
 const config = require('./config/config.json')[env];
+const session = require('express-session');
 const passport = require('./config/passport');
 // require('./passport/kakaoStrategy');
-const session = require('express-session');
 // 카카오 로그인 전략 불러오기 (여기서 호출해야 함!)
 
 const app = express();
@@ -31,9 +31,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      maxAge: 60 * 60 * 1000, // 1시간 (밀리초 단위)
-      httpOnly: true,
       secure: false, // 개발 환경에서는 false, 프로덕션에서는 true로 변경
+      httpOnly: true,
+      maxAge: 60 * 60 * 1000, // 1시간 (밀리초 단위)
       // sameSite: 'lax',
     },
     // store: 나중에 Redis 등으로 교체 가능 (현재는 메모리 저장)
@@ -54,29 +54,22 @@ const moodRouter = require('./routes/moodPosts');
 const likeNmarkRouter = require('./routes/likeNmark');
 const myPageRouter = require('./routes/myPage');
 app.use('/li/user', userRouter);
-app.use('/li/moodPost', moodRouter);
+app.use('/li/moodPosts', moodRouter);
 app.use('/li/moodPost/favor', likeNmarkRouter);
 app.use('/li/moodPost/myPage', myPageRouter);
 
-async () => {
-  try {
-    await db.sequelize
-      .sync({ force: false })
-      .then(() => {
-        console.log('DB connected!');
-        console.log('✅ Sequelize 모델 목록:', db.sequelize.models);
+db.sequelize
+  .sync({ force: false })
+  .then(() => {
+    console.log('DB connected!');
+    // console.log('✅ Sequelize 모델 목록:', db.sequelize.models);
 
-        app.listen(PORT, () => {
-          console.log(`Server running on port http://localhost:${PORT}`);
-          // console.log(`Current environment: ${process.env.NODE_ENV}`);
-        });
-      })
-      .catch(err => {
-        console.log('db connection error!');
-        console.log(err);
-      });
-  } catch (error) {
-    console.log('db async error');
+    app.listen(PORT, () => {
+      console.log(`Server running on port http://localhost:${PORT}`);
+      // console.log(`Current environment: ${process.env.NODE_ENV}`);
+    });
+  })
+  .catch(err => {
+    console.log('db connection error!');
     console.log(err);
-  }
-};
+  });
