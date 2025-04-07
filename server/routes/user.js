@@ -29,8 +29,9 @@ router.post('/kakao-logout', controller.postKakaoLogout);
 // 사용자 프로필
 router.get('/profile', controller.getMyProfile);
 
-router.post('/profile', controller.postMyProfile);
+router.post('/profile/check-password', controller.postCheckPassword);
 
+router.put('/profile', controller.putMyProfile);
 //회원탈퇴
 router.post('/delete', controller.deleteUser);
 

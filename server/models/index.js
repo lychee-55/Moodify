@@ -25,9 +25,12 @@ db.PostLike = require('./PostLike')(sequelize, Sequelize.DataTypes);
 db.Bookmark = require('./Bookmark')(sequelize, Sequelize.DataTypes);
 db.Comment = require('./Comment')(sequelize, Sequelize.DataTypes);
 
-console.log('✅ User 모델 확인:', db.User);
-console.log('✅ sequelize.models:', sequelize.models);
-console.log('✅ User 모델의 클래스 확인:', db.User instanceof Sequelize.Model);
+// console.log('✅ User 모델 확인:', db.User);
+// console.log('✅ sequelize.models:', sequelize.models);
+// console.log(
+//   '✅ User 모델의 클래스 확인 db.User instanceof Sequelize.Model:',
+//   db.User instanceof Sequelize.Model,
+// );
 
 // fs.readdirSync(__dirname)
 //   .filter(file => file !== 'index.js' && file.endsWith('.js'))
