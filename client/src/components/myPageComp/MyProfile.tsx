@@ -4,13 +4,13 @@ import MyLikes from './MyLikes';
 import MyBookmarks from './MyBookmarks';
 import { Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-// type TabType = 'like' | 'bookmark';
+import Avvvatars from 'avvvatars-react';
+import useUserData from '../../hook/useUserData';
 
 export default function MyProfile() {
-  //   const [selectedTab, setSelectedTab] = useState<TabType>('like');
   const navigate = useNavigate();
   const location = useLocation();
+  const { userData } = useUserData();
 
   const isLike = location.pathname.endsWith('like');
   const isBookmark = location.pathname.endsWith('bookmark');
@@ -19,22 +19,29 @@ export default function MyProfile() {
       {/* 마이 프로필 섹션 */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-6">
-          <img
+          <Avvvatars value={userData.profile_image} style="shape" size={96} />
+          {/* <img
             src="/default-profile.png"
             alt="Profile"
             className="w-24 h-24 rounded-full object-cover border"
-          />
+          /> */}
           <div>
-            <h2 className="text-2xl font-bold">사용자 닉네임</h2>
+            <h2 className="text-2xl font-bold">{userData.nickname}</h2>
           </div>
         </div>
         <div>
           {/* PC에서는 텍스트 버튼, 모바일에서는 아이콘 버튼 */}
-          <button className="hidden md:block px-4 py-2 border border-[#272b1c] rounded-md hover:bg-[#e0dad4] transition">
+          <button
+            className="hidden md:block px-4 py-2 border border-[#272b1c] rounded-md hover:bg-[#e0dad4] transition"
+            onClick={() => navigate('/li/user/profile')}
+          >
             프로필 수정
           </button>
-          <button className="md:hidden p-2  hover:text-[#0c0c07]">
-            <Settings size={24} />
+          <button
+            className="md:hidden p-2  hover:text-[#0c0c07]"
+            title="프로필 설정"
+          >
+            <Settings size={24} onClick={() => navigate('/li/user/profile')} />
           </button>
         </div>
       </div>

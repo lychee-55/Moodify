@@ -11,7 +11,7 @@ export default function MyProfileAvvvatars({
   return (
     <div className="flex flex-col items-center gap-2">
       <Avvvatars value={nickname} style="shape" size={96} />
-      <p className="text-sm text-gray-500">자동 생성된 프로필입니다</p>
+      {/* <p className="text-sm text-gray-500">자동 생성된 프로필입니다</p> */}
     </div>
   );
 }
