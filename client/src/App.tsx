@@ -11,6 +11,7 @@ import MyLikes from './components/myPageComp/MyLikes';
 import MyBookmarks from './components/myPageComp/MyBookmarks';
 import MyProfilePage from './pages/MyProfilePage';
 import SearchMusic from './components/moodPost/SearchMusic';
+import DescriptionPage from './pages/DescriptionPage';
 
 function App() {
   return (
@@ -32,6 +33,10 @@ function App() {
             <Route path="/li/moodPosts/create" element={<CreateMoodPage />}>
               {/* <Route path="search-music" element={<SearchMusic />} /> */}
             </Route>
+            <Route
+              path="/li/moodposts/view/:post_id"
+              element={<DescriptionPage />}
+            />
           </Routes>
         </div>
       </BrowserRouter>
