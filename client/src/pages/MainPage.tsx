@@ -4,8 +4,10 @@ import PopularMood from '../components/main/popularMood/PopularMood';
 export default function MainPage() {
   return (
     <>
-      {/* <Nav /> */}
-      <PopularMood />
+      <div className="h-full">
+        <Nav />
+        <PopularMood />
+      </div>
     </>
   );
 }

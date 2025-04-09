@@ -11,18 +11,18 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
-      artist: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      song: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-      },
-      spotify_track_id: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-      },
+      // artist: {
+      //   type: DataTypes.STRING(50),
+      //   allowNull: true,
+      // },
+      // song: {
+      //   type: DataTypes.STRING(255),
+      //   allowNull: true,
+      // },
+      // spotify_track_id: {
+      //   type: DataTypes.STRING(255),
+      //   allowNull: true,
+      // },
       post_image: {
         type: DataTypes.STRING(255),
         allowNull: true,
@@ -62,6 +62,16 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: 'CASCADE', // 유저 삭제 시 포스트도 삭제
       },
+      // 음악 관계 추가
+      music_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+          model: 'musics',
+          key: 'music_id',
+        },
+        onDelete: 'SET NULL',
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -80,6 +90,7 @@ module.exports = (sequelize, DataTypes) => {
       deletedAt: 'deleted_at',
       indexes: [
         { fields: ['user_id'] }, // FK 인덱스
+        { fields: ['music_id'] },
         { fields: ['likes_count'] },
         { fields: ['created_at'] },
       ],
