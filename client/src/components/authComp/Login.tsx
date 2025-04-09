@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import axios from 'axios';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import KakaoLogin from './KakaoLogin';
 import { login } from '../../store/modules/checkSessionSlice';
@@ -13,6 +13,8 @@ export default function Login() {
     email: '',
     password: '',
   });
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ export default function Login() {
           withCredentials: true, // 세션 사용 시 필수
         },
       );
-
+      console.log(response.data);
       if (response.data.status === 'SUCCESS') {
         const { nickname, auth_provider } = response.data.data.user;
 
@@ -38,8 +40,18 @@ export default function Login() {
 
         alert('로그인 성공!');
         navigate('/');
-      } else {
+      } else if (
+        response.data.status === 'ERROR' &&
+        response.data.message.includes('가입된 사용자')
+      ) {
+        emailRef.current?.focus();
         alert(response.data.message);
+      } else if (
+        response.data.status === 'ERROR' &&
+        response.data.message.includes('비밀번호')
+      ) {
+        alert(response.data.message);
+        passwordRef.current?.focus();
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -79,6 +91,7 @@ export default function Login() {
                   type="email"
                   autoComplete="email"
                   required
+                  ref={emailRef}
                   value={formData.email}
                   onChange={e =>
                     setFormData({ ...formData, email: e.target.value })
@@ -105,6 +118,7 @@ export default function Login() {
                   name="password"
                   type="password"
                   autoComplete="current-password"
+                  ref={passwordRef}
                   required
                   value={formData.password}
                   onChange={e =>

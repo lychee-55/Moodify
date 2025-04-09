@@ -1,7 +1,10 @@
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import BookCoverItem from './BoolCoverItem';
+import { SampleNextArrow, SamplePrevArrow } from './SlideArrow';
 
+// 책 타입 정의 (props 구조 지정용)
 type Book = {
   bookId: string;
   userName: string;
@@ -9,13 +12,6 @@ type Book = {
   texts: string;
   coverUrl: string;
   images: string[];
-};
-
-type ArrowProps = {
-  className?: string;
-  // style?: React.CSSProperties;
-  style?: string;
-  onClick?: () => void;
 };
 
 // 테스트용 mock 데이터
@@ -62,84 +58,46 @@ const mockBooks: Book[] = [
   },
 ];
 
-const SampleNextArrow = ({ className, style, onClick }: ArrowProps) => (
-  <div
-    className={className}
-    style={{
-      // ...style,
-      display: 'block',
-      background: '#333',
-      borderRadius: '50%',
-    }}
-    onClick={onClick}
-  />
-);
-
-const SamplePrevArrow = ({ className, style, onClick }: ArrowProps) => (
-  <div
-    className={className}
-    style={{
-      // ...style,
-      display: 'block',
-      background: '#333',
-      borderRadius: '50%',
-    }}
-    onClick={onClick}
-  />
-);
-
+// react-slick 슬라이더 설정
 const settings = {
-  dots: true,
-  infinite: true,
-  slidesToShow: 3,
-  swipeToSlide: true,
-  speed: 300,
-  nextArrow: <SampleNextArrow />,
-  prevArrow: <SamplePrevArrow />,
+  dots: true, // 하단 점 네비게이션 표시
+  infinite: true, // 무한 루프
+  slidesToShow: 3, // 보여줄 슬라이드 수
+  swipeToSlide: true, // 슬라이드로 전환 가능
+  speed: 300, // 전환 속도
+  nextArrow: <SampleNextArrow />, // 커스텀 다음 화살표
+  prevArrow: <SamplePrevArrow />, // 커스텀 이전 화살표
   responsive: [
     {
       breakpoint: 1024,
       settings: {
-        slidesToShow: 2,
+        slidesToShow: 2, // 화면 너비 1024px 이하일 경우 2개 표시
       },
     },
     {
       breakpoint: 768,
       settings: {
-        slidesToShow: 1,
+        slidesToShow: 1, // 화면 너비 768px 이하일 경우 1개 표시
       },
     },
   ],
 };
 
-const BookCover = ({ book }: { book: Book }) => (
-  <div className="book-cover w-[230px] mx-auto transition-all duration-300 hover:scale-105">
-    <img
-      src={book.coverUrl}
-      alt={book.title}
-      className="w-full h-64 object-cover rounded-lg shadow-md"
-    />
-    <div className="mt-3 p-2">
-      <h3 className="text-lg font-bold truncate">{book.title}</h3>
-      <p className="text-sm text-gray-500">by {book.userName}</p>
-    </div>
-  </div>
-);
-
-// books prop을 선택적으로 변경하고 기본값 설정
-const PopularMood = ({ books = mockBooks }: { books?: Book[] }) => {
+// PopularMood 슬라이더 컴포넌트
+export default function PopularMood({ books = mockBooks }: { books?: Book[] }) {
   return (
     <div className="w-full max-w-[1000px] mx-auto p-[30px] box-border relative">
+      {/* 섹션 제목 */}
       <h2 className="text-2xl font-bold mb-6 text-center">Popular Moods</h2>
+
+      {/* react-slick 슬라이더 */}
       <Slider {...settings}>
         {books.map(book => (
           <div key={book.bookId} className="px-2 outline-none">
-            <BookCover book={book} />
+            <BookCoverItem book={book} />
           </div>
         ))}
       </Slider>
     </div>
   );
-};
-
-export default PopularMood;
+}
