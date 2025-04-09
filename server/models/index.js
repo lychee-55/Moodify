@@ -24,6 +24,7 @@ db.Post = require('./Posts')(sequelize, Sequelize.DataTypes);
 db.PostLike = require('./PostLike')(sequelize, Sequelize.DataTypes);
 db.Bookmark = require('./Bookmark')(sequelize, Sequelize.DataTypes);
 db.Comment = require('./Comment')(sequelize, Sequelize.DataTypes);
+db.Music = require('./Music')(sequelize, Sequelize.DataTypes);
 
 // console.log('✅ User 모델 확인:', db.User);
 // console.log('✅ sequelize.models:', sequelize.models);
@@ -58,6 +59,18 @@ db.User.hasMany(db.Post, {
 db.Post.belongsTo(db.User, {
   foreignKey: 'user_id',
   as: 'author',
+});
+
+// 🌟 2. Post(게시글) - Music(음악) : 1:1 관계 (NEW)
+db.Post.belongsTo(db.Music, {
+  foreignKey: 'music_id', // Post 모델의 외래키
+  as: 'music', // 접근 시 사용할 별칭 (post.getMusic())
+  onDelete: 'SET NULL', // 음악 삭제 시 게시글은 유지
+});
+
+db.Music.hasOne(db.Post, {
+  foreignKey: 'music_id',
+  as: 'post', // 접근 시 사용할 별칭 (music.getPost())
 });
 
 // 🌟 2. User - PostLike 관계 (M:N through PostLike)

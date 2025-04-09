@@ -6,6 +6,7 @@ const cors = require('cors');
 const config = require('./config/config.json')[env];
 const session = require('express-session');
 const passport = require('./config/passport');
+const path = require('path');
 // require('./passport/kakaoStrategy');
 // 카카오 로그인 전략 불러오기 (여기서 호출해야 함!)
 
@@ -15,6 +16,7 @@ const PORT = 8080;
 // 미들웨어 처리
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // 정적 파일 처리
 
 // 1. CORS 설정 (프론트엔드 localhost:3000 허용)
 app.use(
