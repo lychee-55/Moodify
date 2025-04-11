@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Heart, Bookmark, X, Play } from 'lucide-react';
 import Avvvatars from 'avvvatars-react';
-import HeartButton from '../components/postItems/HeartButton';
-import BookmarkButton from '../components/postItems/BookmarkButton';
-import MusicInfo from '../components/postItems/MusicInfo';
+import HeartButton from '../postItems/HeartButton';
+import BookmarkButton from '../postItems/BookmarkButton';
+import MusicInfo from '../postItems/MusicInfo';
 interface Post {
   //   id: number;
   title: string;
@@ -34,12 +34,11 @@ interface Props {
 
 export default function DescriptionPage() {
   const [post, setPost] = useState<Post | null>(null);
-  const postId = 2; // 추후에는 URL 파라미터나 상태 등에서 가져올 수 있습니다.
+  const postId = 1; // 추후에는 URL 파라미터나 상태 등에서 가져올 수 있습니다.
   const handleClose = () => {
     // 닫기 동작 정의 (예: 모달 닫기 or 이동)
     console.log('닫기');
   };
-  const [isPortrait, setIsPortrait] = useState<boolean | null>(null);
 
   useEffect(() => {
     const fetchPostDetail = async () => {
@@ -52,14 +51,6 @@ export default function DescriptionPage() {
         );
         setPost(response.data.data);
         console.log('프론트에서 받은 response.data입니다.:::', response.data);
-
-        // 이미지 비율 계산
-        const img = new Image();
-        img.src = `${process.env.REACT_APP_API_SERVER}${response.data.data.imageUrl}`;
-        img.onload = () => {
-          const ratio = img.width / img.height;
-          setIsPortrait(ratio < 1); // 세로가 더 길면 true
-        };
       } catch (error) {
         console.error('게시글 정보를 불러오지 못했습니다.', error);
       }
@@ -74,12 +65,7 @@ export default function DescriptionPage() {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg overflow-hidden max-w-4xl w-full max-h-[90vh] flex">
         {/* 왼쪽 이미지 */}
-        {/* <div className="w-1/2 h-96 relative flex items-center justify-center overflow-hidden bg-black"> 기존 블러처리만 적용한 값 */}
-        <div
-          className={`w-1/2 ${
-            isPortrait === null ? 'h-96' : isPortrait ? 'h-128' : 'h-96'
-          } relative flex items-center justify-center overflow-hidden bg-black`}
-        >
+        <div className="w-1/2 h-96 relative flex items-center justify-center overflow-hidden bg-black">
           {/* 블러 배경 */}
           <img
             src={`${process.env.REACT_APP_API_SERVER}${post.imageUrl}`}
@@ -116,6 +102,7 @@ export default function DescriptionPage() {
             <div className="flex content-center space-x-4">
               <HeartButton isLiked={post.isLiked} likes={post.likes} />
               <BookmarkButton isBookmarked={post.isBookmarked} />
+
               <button onClick={handleClose}>
                 <X size={20} />
               </button>
