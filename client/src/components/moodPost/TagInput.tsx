@@ -27,6 +27,7 @@ const TagInput: React.FC<TagInputProps> = ({ tags, onAddTag, onRemoveTag }) => {
           type="text"
           className="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#adcf56] focus:border-[#adcf56]"
           onChange={e => setTagInput(e.target.value)}
+          value={tagInput}
           onKeyPress={e => e.key === 'Enter' && handleAddTag()}
           placeholder="태그 입력"
         />
