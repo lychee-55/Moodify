@@ -32,13 +32,14 @@ interface Props {
   onClose: () => void;
 }
 
-export default function DescriptionPage() {
+export default function DescriptionPage({ postId, onClose }: Props) {
   const [post, setPost] = useState<Post | null>(null);
-  const postId = 2; // 추후에는 URL 파라미터나 상태 등에서 가져올 수 있습니다.
+  // const postId = 2; // 추후에는 URL 파라미터나 상태 등에서 가져올 수 있습니다.
   const handleClose = () => {
     // 닫기 동작 정의 (예: 모달 닫기 or 이동)
-    console.log('닫기');
+    onClose(); // 부모에서 모달 상태를 변경할 수 있도록 호출
   };
+
   const [isPortrait, setIsPortrait] = useState<boolean | null>(null);
 
   useEffect(() => {
