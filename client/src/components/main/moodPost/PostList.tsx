@@ -5,6 +5,8 @@ import PostItem from './PostItem';
 import axios from 'axios';
 import { Post } from '../../../types/post';
 import DescriptionPage from '../../../pages/DescriptionPage';
+import EditPost from './EditPost';
+// import { useLocation } from 'react-router-dom';
 
 interface PostListProps {
   fetchUrl: string;
@@ -21,6 +23,8 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
   const observerRef = useRef<HTMLDivElement | null>(null);
   const isLoadingRef = useRef(false);
 
+  const [isEditMode, setIsEditMode] = useState(false);
+
   const handleOpenPost = (postId: number) => {
     setSelectedPostId(postId);
   };
@@ -29,53 +33,69 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
     setSelectedPostId(null);
   };
 
-  const fetchPosts = useCallback(async () => {
-    if (isLoadingRef.current || !hasMore) return;
-
-    setIsLoading(true);
-    isLoadingRef.current = true;
-
-    try {
-      const params = {
-        page,
-        limit: 10,
-        ...(queryParams || {}),
-      };
-
-      const res = await axios.get(fetchUrl, {
-        params,
-        withCredentials: true,
-      });
-
-      const data: Post[] = res.data.data;
-      console.log('postlist의 res.data::', res.data);
-
-      setPosts(prev => {
-        const existingIds = new Set(prev.map(p => p.post_id));
-        const newPosts = data.filter(p => !existingIds.has(p.post_id));
-        return [...prev, ...newPosts];
-      });
-
-      // limit보다 적으면 더 이상 없음
-      setHasMore(data.length === 10);
-    } catch (error) {
-      console.error('게시글을 불러오는 중 오류 발생:', error);
-    } finally {
-      setIsLoading(false);
-      isLoadingRef.current = false;
-    }
-  }, [fetchUrl, queryParams, page, hasMore]);
+  const handleEditPost = (postId: number) => {
+    setSelectedPostId(postId);
+    setIsEditMode(true);
+  };
 
   useEffect(() => {
-    // fetchUrl이나 queryParams가 변경될 때마다 상태 초기화
+    const loadPosts = async () => {
+      if (isLoadingRef.current || !hasMore) return;
+
+      setIsLoading(true);
+      isLoadingRef.current = true;
+
+      try {
+        const params = {
+          page,
+          limit: 10,
+          ...(queryParams || {}),
+        };
+
+        const res = await axios.get(fetchUrl, {
+          params,
+          withCredentials: true,
+        });
+
+        const data: Post[] = res.data.data;
+
+        if (res.data.status === 'SUCCESS') {
+          setPosts(prev => {
+            const existingIds = new Set(prev.map(p => p.post_id));
+            const newPosts = data.filter(p => !existingIds.has(p.post_id));
+            return [...prev, ...newPosts];
+          });
+
+          setHasMore(data.length === 10);
+        } else {
+          alert(res.data.message);
+        }
+      } catch (error) {
+        console.error('게시글을 불러오는 중 오류 발생:', error);
+      } finally {
+        setIsLoading(false);
+        isLoadingRef.current = false;
+      }
+    };
+
+    loadPosts();
+  }, [page, fetchUrl, queryParams]);
+
+  // useEffect(() => {
+  //   // fetchUrl이나 queryParams가 변경될 때마다 상태 초기화
+  //   setPosts([]);
+  //   setPage(1);
+  //   setHasMore(true);
+  // }, [fetchUrl, JSON.stringify(queryParams)]); // queryParams도 문자열로 변환하여 비교
+
+  // page가 변경되었을 때 실행되는 로직을 분리하고,
+  // fetchUrl, queryParams가 바뀔 때는 page부터 리셋
+  useEffect(() => {
     setPosts([]);
     setPage(1);
     setHasMore(true);
-  }, [fetchUrl, JSON.stringify(queryParams)]); // queryParams도 문자열로 변환하여 비교
-
-  useEffect(() => {
-    fetchPosts();
-  }, [page, fetchPosts]);
+    isLoadingRef.current = false; // 이 부분도 꼭 리셋해줘야 이전 상태 안 따라옴
+  }, [fetchUrl, JSON.stringify(queryParams)]);
 
   useEffect(() => {
     if (!hasMore) return;
@@ -86,7 +106,7 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
           setPage(prev => prev + 1);
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.5 },
     );
 
     const currentRef = observerRef.current;
@@ -95,7 +115,7 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
     return () => {
       if (currentRef) observer.unobserve(currentRef);
     };
-  }, [hasMore]);
+  }, [hasMore, fetchUrl]); // fetchUrl도 여기에 포함
 
   return (
     <div className="mx-auto px-4 w-full max-w-[1800px]">
@@ -114,6 +134,7 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
             key={post.post_id}
             post={post}
             onClick={() => handleOpenPost(post.post_id)}
+            onEdit={() => handleEditPost(post.post_id)} // 추가
           />
         ))}
 
@@ -125,8 +146,18 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
         )}
       </div>
 
-      {selectedPostId !== null && (
+      {selectedPostId !== null && !isEditMode && (
         <DescriptionPage postId={selectedPostId} onClose={handleClosePost} />
+      )}
+
+      {selectedPostId !== null && isEditMode && (
+        <EditPost
+          postId={selectedPostId}
+          onClose={() => {
+            setIsEditMode(false);
+            setSelectedPostId(null);
+          }}
+        />
       )}
 
       {hasMore && (

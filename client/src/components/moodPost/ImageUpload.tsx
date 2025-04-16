@@ -1,11 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { HelpCircle } from 'lucide-react';
+interface ImageUploaderProps {
+  onImageChange: (file: File | null) => void;
+  defaultImageUrl?: string; // ← 이 줄을 추가하세요!
+}
 
 export default function ImageUpload({
   onImageChange,
-}: {
-  onImageChange: (file: File | null) => void;
-}) {
+  defaultImageUrl,
+}: ImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -25,6 +28,12 @@ export default function ImageUpload({
       onImageChange(null);
     }
   };
+
+  useEffect(() => {
+    if (defaultImageUrl) {
+      setPreviewUrl(`${process.env.REACT_APP_API_SERVER}${defaultImageUrl}`);
+    }
+  }, [defaultImageUrl]);
 
   const handleClick = () => {
     fileInputRef.current?.click();

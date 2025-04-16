@@ -205,7 +205,10 @@ SearchMusicProps) {
       {selectedMusic && (
         <div className="mt-2 p-3 bg-gray-50 rounded-md flex items-center gap-3">
           <img
-            src={selectedMusic.music_image}
+            src={
+              selectedMusic.music_image ||
+              `${process.env.REACT_APP_API_SERVER}${selectedMusic.music_image}`
+            }
             alt={selectedMusic.music_title}
             className="w-12 h-12 rounded"
           />

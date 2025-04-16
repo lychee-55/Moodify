@@ -4,12 +4,14 @@ import { Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Avvvatars from 'avvvatars-react';
 import useUserData from '../../hook/useUserData';
+import PostList from '../main/moodPost/PostList';
 
 export default function MyProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { userData } = useUserData();
 
+  const ismyPage = location.pathname.endsWith('myMoodPosts');
   const isLike = location.pathname.endsWith('likes');
   const isBookmark = location.pathname.endsWith('marks');
   return (
@@ -46,6 +48,16 @@ export default function MyProfile() {
 
       {/* 메뉴 탭 */}
       <div className="flex border-b mb-4">
+        <button
+          className={`flex-1 py-2 text-center ${
+            ismyPage
+              ? 'border-b-2 border-blue-500 font-semibold'
+              : 'text-gray-500'
+          }`}
+          onClick={() => navigate('myMoodPosts')}
+        >
+          내 게시글
+        </button>
         <button
           className={`flex-1 py-2 text-center ${
             isLike

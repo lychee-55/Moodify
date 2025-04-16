@@ -1,53 +1,6 @@
-// 로그인 상태 확인 예시
-// const checkAuthStatus = async () => {
-//   try {
-//     const response = await axios.get(
-//       `${process.env.REACT_APP_API_SERVER}/li/user/check-session`,
-//       { withCredentials: true },
-//     );
-
-//     console.log('현재 로그인된 사용자:', response.data);
-
-//     if (response.data.status === 'SUCCESS') {
-//       setIsLoggedIn(true);
-//       setUserData(response.data.data.user);
-//     }
-//   } catch (error) {
-//     setIsLoggedIn(false);
-//     setUserData(null);
-
-//     if (axios.isAxiosError(error)) {
-//       // 서버에서 명시적으로 반환한 에러 (401: 로그인 필요)
-//       if (error.response?.status === 401) {
-//         alert('로그인이 필요한 서비스입니다.\n로그인 페이지로 이동합니다.');
-//         // 로그인 페이지로 리다이렉트
-//         navigate('/li/user/login');
-//       }
-//       // 서버 오류 (500 등)
-//       else if (error.response?.status === 500) {
-//         alert('서버에 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.');
-//       }
-//       // 기타 네트워크 오류
-//       else {
-//         console.error('로그인 상태 확인 실패:', error);
-//         alert(
-//           '서버 연결에 문제가 발생했습니다.\n인터넷 연결을 확인해주세요.',
-//         );
-//       }
-//     } else {
-//       console.error('예상치 못한 에러:', error);
-//       alert('알 수 없는 오류가 발생했습니다.');
-//     }
-//   }
-// };
-// // 컴포넌트 마운트 시 세션 확인
-// useEffect(() => {
-//   checkAuthStatus();
-// }, []);
-
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, LogIn, LogOut, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { KeyboardEvent, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { RootState } from '../../store/store';
@@ -61,6 +14,25 @@ export default function Header() {
   const dispatch = useDispatch();
 
   useCheckSession();
+
+  const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 🔍 검색 실행 함수
+  const handleSearch = () => {
+    if (searchKeyword.trim()) {
+      navigate(
+        `/li/moodPosts/view/${encodeURIComponent(searchKeyword.trim())}`,
+      );
+      setSearchKeyword('');
+      setIsSearchOpen(false); // 모바일 검색창 닫기
+    }
+  };
+
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   // Redux 상태에서 sessionValid 가져오기
   const sessionValid = useSelector(
@@ -114,10 +86,14 @@ export default function Header() {
             type="text"
             placeholder="검색어를 입력하세요..."
             className="w-full px-4 py-2 pr-10 rounded-md border border-[#c4b8ac] bg-[#e8e2db] text-[#272b1c] focus:outline-none focus:border-[#adcf56]"
+            value={searchKeyword}
+            onChange={e => setSearchKeyword(e.target.value)}
+            onKeyDown={handleKeyPress}
           />
           <Search
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
             size={20}
+            onClick={handleSearch}
           />
         </div>
 
@@ -201,10 +177,14 @@ export default function Header() {
               placeholder="검색어를 입력하세요..."
               autoFocus
               className="w-full px-4 py-3 pr-12 rounded-md border border-[#c4b8ac] bg-[#e8e2db] text-[#272b1c] focus:outline-none focus:border-blue-400"
+              value={searchKeyword}
+              onChange={e => setSearchKeyword(e.target.value)}
+              onKeyDown={handleKeyPress}
             />
             <Search
               className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500"
               size={20}
+              onClick={handleSearch}
             />
             <button
               className="absolute right-14 top-1/2 transform -translate-y-1/2 text-gray-500"
