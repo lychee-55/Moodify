@@ -1,7 +1,5 @@
 // src/pages/MyProfile.tsx
 import { useState } from 'react';
-import MyLikes from './MyLikes';
-import MyBookmarks from './MyBookmarks';
 import { Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Avvvatars from 'avvvatars-react';
@@ -12,10 +10,10 @@ export default function MyProfile() {
   const location = useLocation();
   const { userData } = useUserData();
 
-  const isLike = location.pathname.endsWith('like');
-  const isBookmark = location.pathname.endsWith('bookmark');
+  const isLike = location.pathname.endsWith('likes');
+  const isBookmark = location.pathname.endsWith('marks');
   return (
-    <div className="max-w-4xl mx-auto py-8 px-6 md:px-12">
+    <div className="max-w-6xl mx-auto py-8 px-4 md:px-12">
       {/* 마이 프로필 섹션 */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-6">
@@ -54,7 +52,7 @@ export default function MyProfile() {
               ? 'border-b-2 border-blue-500 font-semibold'
               : 'text-gray-500'
           }`}
-          onClick={() => navigate('like')}
+          onClick={() => navigate('likes')}
         >
           좋아요
         </button>
@@ -64,7 +62,7 @@ export default function MyProfile() {
               ? 'border-b-2 border-blue-500 font-semibold'
               : 'text-gray-500'
           }`}
-          onClick={() => navigate('bookmark')}
+          onClick={() => navigate('marks')}
         >
           북마크
         </button>

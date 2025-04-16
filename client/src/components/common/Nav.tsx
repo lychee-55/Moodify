@@ -172,14 +172,14 @@ export default function NavBar() {
   return (
     <div
       className={`
-        absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50
-        bg-gray-800 opacity-80 rounded-full shadow-lg py-0
+        fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 border border-[#1e1b45]
+        bg-[#150d31] opacity-80 rounded-full shadow-lg
         transition-all duration-300 ease-in-out
         ${collapsed ? 'w-[125px]' : 'w-10/12 sm:w-9/12 md:w-8/12 lg:w-6/12'}
         ${collapsed ? 'px-1 sm:px-4' : 'px-2 sm:px-6'}
       `}
     >
-      <nav className="flex justify-between items-center text-white text-sm relative min-h-[64px]">
+      <nav className="flex justify-between items-center text-white text-sm relative min-h-[54px]">
         {/* 왼쪽 < 아이콘 */}
         {collapsed && (
           <button
@@ -252,17 +252,10 @@ function NavItem({
   return (
     <Link
       to={to}
-      className="flex flex-col items-center gap-1 hover:text-gray-300 cursor-pointer transition-all duration-300"
+      className="flex flex-col items-center gap-1 hover:text-gray-300 cursor-pointer transition-all duration-300 min-w-[60px]"
     >
       {icon}
-      <span
-        className={`
-          text-xs transition-opacity duration-300
-          hidden sm:inline
-        `}
-      >
-        {label}
-      </span>
+      <span className="text-xs hidden sm:inline">{label}</span>
     </Link>
   );
 }

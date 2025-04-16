@@ -1,16 +1,25 @@
 // components/PostList.tsx
+// src/components/PostList/PostList.tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import PostItem from './PostItem';
 import axios from 'axios';
 import { Post } from '../../../types/post';
 import DescriptionPage from '../../../pages/DescriptionPage';
 
-export default function PostList() {
-  const [posts, setPosts] = useState<Post[]>([]); // 게시글 목록 상태
-  const [page, setPage] = useState(1); // 현재 페이지 번호
-  const [hasMore, setHasMore] = useState(true); // 더 불러올 데이터가 있는지 여부
-  const observerRef = useRef<HTMLDivElement | null>(null); // 무한스크롤 관찰 대상 ref
+interface PostListProps {
+  fetchUrl: string;
+  queryParams?: Record<string, any>;
+}
+
+export default function PostList({ fetchUrl, queryParams }: PostListProps) {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const observerRef = useRef<HTMLDivElement | null>(null);
+  const isLoadingRef = useRef(false);
 
   const handleOpenPost = (postId: number) => {
     setSelectedPostId(postId);
@@ -20,77 +29,222 @@ export default function PostList() {
     setSelectedPostId(null);
   };
 
-  // 게시글 데이터를 서버에서 가져오는 함수
   const fetchPosts = useCallback(async () => {
+    if (isLoadingRef.current || !hasMore) return;
+
+    setIsLoading(true);
+    isLoadingRef.current = true;
+
     try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_API_SERVER}/li/moodPosts/view/moodList?page=${page}&limit=10`,
-        { withCredentials: true },
-      );
+      const params = {
+        page,
+        limit: 10,
+        ...(queryParams || {}),
+      };
 
-      const data = res.data.data;
+      const res = await axios.get(fetchUrl, {
+        params,
+        withCredentials: true,
+      });
 
-      // 새 데이터를 기존 게시글에 추가
-      // 중복 제거 후 상태 업데이트
+      const data: Post[] = res.data.data;
+      console.log('postlist의 res.data::', res.data);
+
       setPosts(prev => {
-        const existingIds = new Set(prev.map((p: Post) => p.post_id));
-        const newPosts = data.filter((p: Post) => !existingIds.has(p.post_id));
+        const existingIds = new Set(prev.map(p => p.post_id));
+        const newPosts = data.filter(p => !existingIds.has(p.post_id));
         return [...prev, ...newPosts];
       });
 
-      // 데이터가 더 없으면 hasMore를 false로 설정하여 무한스크롤 중단
-      if (data.length === 0) {
-        setHasMore(false);
-      }
+      // limit보다 적으면 더 이상 없음
+      setHasMore(data.length === 10);
     } catch (error) {
       console.error('게시글을 불러오는 중 오류 발생:', error);
+    } finally {
+      setIsLoading(false);
+      isLoadingRef.current = false;
     }
-  }, [page]);
+  }, [fetchUrl, queryParams, page, hasMore]);
 
-  // 페이지 번호가 바뀔 때마다 fetchPosts 실행
   useEffect(() => {
-    if (hasMore) fetchPosts();
-  }, [page, fetchPosts, hasMore]);
+    // fetchUrl이나 queryParams가 변경될 때마다 상태 초기화
+    setPosts([]);
+    setPage(1);
+    setHasMore(true);
+  }, [fetchUrl, JSON.stringify(queryParams)]); // queryParams도 문자열로 변환하여 비교
 
-  // IntersectionObserver로 무한스크롤 구현
+  useEffect(() => {
+    fetchPosts();
+  }, [page, fetchPosts]);
+
   useEffect(() => {
     if (!hasMore) return;
 
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting) {
-          setPage(prev => prev + 1); // 화면 끝에 도달 시 다음 페이지 요청
+        if (entries[0].isIntersecting && !isLoadingRef.current) {
+          setPage(prev => prev + 1);
         }
       },
-      { threshold: 1.0 },
+      { threshold: 0.1 },
     );
 
-    if (observerRef.current) observer.observe(observerRef.current);
+    const currentRef = observerRef.current;
+    if (currentRef) observer.observe(currentRef);
 
     return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current);
+      if (currentRef) observer.unobserve(currentRef);
     };
   }, [hasMore]);
 
   return (
-    // 수정 후
-    <div className="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 px-4">
-      {posts.map(post => (
-        <PostItem
-          key={post.post_id}
-          post={post}
-          onClick={() => handleOpenPost(post.post_id)}
-        />
-      ))}
+    <div className="mx-auto px-4 w-full max-w-[1800px]">
+      <div
+        className={`
+          grid gap-4
+          grid-cols-2
+          sm:grid-cols-3
+          md:grid-cols-3
+          lg:grid-cols-4
+          w-full sm:w-[600px] md:w-[800px] lg:w-[1000px] mx-auto
+        `}
+      >
+        {posts.map(post => (
+          <PostItem
+            key={post.post_id}
+            post={post}
+            onClick={() => handleOpenPost(post.post_id)}
+          />
+        ))}
+
+        {/* 게시글 없을 때 */}
+        {!isLoading && posts.length === 0 && (
+          <p className="text-center py-10 col-span-full text-gray-500">
+            게시글이 없습니다.
+          </p>
+        )}
+      </div>
+
       {selectedPostId !== null && (
         <DescriptionPage postId={selectedPostId} onClose={handleClosePost} />
       )}
 
-      {/* 관찰 대상 div: 이 요소가 화면에 보이면 다음 페이지를 로드함 */}
-      <div ref={observerRef} className="h-10 col-span-full" />
+      {hasMore && (
+        <div ref={observerRef} className="h-10 col-span-full">
+          {isLoading && <p className="text-center py-4">로딩 중...</p>}
+        </div>
+      )}
     </div>
   );
 }
+
+// 성공한 코드(그냥 불러오기)
+// import React, { useCallback, useEffect, useRef, useState } from 'react';
+// import PostItem from './PostItem';
+// import axios from 'axios';
+// import { Post } from '../../../types/post';
+// import DescriptionPage from '../../../pages/DescriptionPage';
+
+// export default function PostList() {
+//   const [posts, setPosts] = useState<Post[]>([]);
+//   const [page, setPage] = useState(1);
+//   const [hasMore, setHasMore] = useState(true);
+//   const observerRef = useRef<HTMLDivElement | null>(null);
+//   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const isLoadingRef = useRef(false);
+
+//   const handleOpenPost = (postId: number) => {
+//     setSelectedPostId(postId);
+//   };
+
+//   const handleClosePost = () => {
+//     setSelectedPostId(null);
+//   };
+
+//   const fetchPosts = useCallback(async () => {
+//     // isLoading 체크를 함수 내부로 이동
+//     if (isLoadingRef.current) return;
+//     setIsLoading(true);
+//     isLoadingRef.current = true;
+
+//     try {
+//       const res = await axios.get(
+//         `${process.env.REACT_APP_API_SERVER}/li/moodPosts/view/moodList?page=${page}&limit=10`,
+//         { withCredentials: true },
+//       );
+
+//       const data = res.data.data;
+
+//       setPosts(prev => {
+//         const existingIds = new Set(prev.map(p => p.post_id));
+//         const newPosts = data.filter((p: Post) => !existingIds.has(p.post_id));
+//         return [...prev, ...newPosts];
+//       });
+
+//       setHasMore(data.length > 0);
+//     } catch (error) {
+//       console.error('게시글을 불러오는 중 오류 발생:', error);
+//     } finally {
+//       setIsLoading(false);
+//       isLoadingRef.current = false;
+//     }
+//   }, [page]); // isLoading 종속성 제거
+
+//   useEffect(() => {
+//     if (hasMore) fetchPosts();
+//   }, [page, fetchPosts, hasMore]);
+
+//   useEffect(() => {
+//     if (!hasMore || isLoading) return;
+
+//     const observer = new IntersectionObserver(
+//       entries => {
+//         if (entries[0].isIntersecting) {
+//           setPage(prev => prev + 1);
+//         }
+//       },
+//       { threshold: 0.1 },
+//     );
+
+//     const currentRef = observerRef.current;
+//     if (currentRef) observer.observe(currentRef);
+
+//     return () => {
+//       if (currentRef) observer.unobserve(currentRef);
+//     };
+//   }, [hasMore, isLoading]);
+
+//   return (
+//     <div className="mx-auto px-4 w-full max-w-[1800px]">
+//       <div
+//         className={`
+//         grid grid-cols-2 gap-4
+//         sm:grid-cols-3 sm:w-10/12 sm:mx-auto
+//         lg:grid-cols-4 lg:w-8/12
+//       `}
+//       >
+//         {posts.map(post => (
+//           <PostItem
+//             key={post.post_id}
+//             post={post}
+//             onClick={() => handleOpenPost(post.post_id)}
+//           />
+//         ))}
+//       </div>
+
+//       {selectedPostId !== null && (
+//         <DescriptionPage postId={selectedPostId} onClose={handleClosePost} />
+//       )}
+
+//       {hasMore && (
+//         <div ref={observerRef} className="h-10 col-span-full">
+//           {isLoading && <p className="text-center py-4">로딩 중...</p>}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 
 // import { useEffect, useState } from 'react';
 // import PostItem from './PostItem';
