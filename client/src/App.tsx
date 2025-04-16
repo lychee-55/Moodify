@@ -12,6 +12,7 @@ import MyBookmarks from './components/myPageComp/MyBookmarks';
 import MyProfilePage from './pages/MyProfilePage';
 import DescriptionPage from './pages/DescriptionPage';
 import PostList from './components/main/moodPost/PostList';
+import SearchResultPage from './pages/SearchResultPage';
 
 function App() {
   return (
@@ -26,7 +27,17 @@ function App() {
             <Route path="/li/user/login" element={<LoginPage />} />
             <Route path="/li/user/sign-up" element={<SignupPage />} />
             <Route path="/li/user/profile" element={<MyProfilePage />} />
+            {/* <Route path="/li/user/EditPostModal" element={<EditPostModal />} /> */}
+
             <Route path="/li/user/myPage" element={<MyPage />}>
+              <Route
+                path="myMoodPosts"
+                element={
+                  <PostList
+                    fetchUrl={`${process.env.REACT_APP_API_SERVER}/li/moodPost/myPage/myMoodPosts`}
+                  />
+                }
+              />
               <Route
                 path="likes"
                 element={
@@ -47,10 +58,14 @@ function App() {
             <Route path="/li/moodPosts/create" element={<CreateMoodPage />}>
               {/* <Route path="search-music" element={<SearchMusic />} /> */}
             </Route>
+            <Route
+              path="/li/moodPosts/view/:filter"
+              element={<SearchResultPage />}
+            />
             {/* <Route
               path="/li/moodposts/view/:post_id"
               element={<DescriptionPage />}
-            /> */}
+              /> */}
           </Routes>
         </div>
       </BrowserRouter>

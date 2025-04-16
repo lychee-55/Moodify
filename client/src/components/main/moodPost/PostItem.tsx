@@ -2,13 +2,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Post } from '../../../types/post';
 import Avvvatars from 'avvvatars-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Edit3, Eye } from 'lucide-react';
 
 interface Props {
   post: Post;
   onClick: () => void;
+  onEdit: () => void;
 }
-
-const PostItem = React.memo(({ post, onClick }: Props) => {
+const PostItem = React.memo(({ post, onClick, onEdit }: Props) => {
   // 태그 컴포넌트 분리 */
   const TagItem = ({ tag }: { tag: string }) => {
     if (!tag) return null;
@@ -37,6 +39,11 @@ const PostItem = React.memo(({ post, onClick }: Props) => {
   const avatarContainerRef = useRef<HTMLDivElement>(null);
   const [avatarSize, setAvatarSize] = useState(180); // 기본 크기
 
+  const location = useLocation();
+  const ismyPage = location.pathname.endsWith('myMoodPosts');
+  const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(false);
+
   // 컨테이너 크기에 따라 아바타 크기 조정
   useEffect(() => {
     const updateSize = () => {
@@ -54,6 +61,15 @@ const PostItem = React.memo(({ post, onClick }: Props) => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize(); // 초기 체크
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // 이미지 URL 생성 및 유효성 검사
   const getImageUrl = (): string | undefined => {
     if (!post.post_image) return undefined;
@@ -66,7 +82,7 @@ const PostItem = React.memo(({ post, onClick }: Props) => {
   const showImage = imageUrl && !imageError;
 
   return (
-    <div className="mb-4 flex justify-center" onClick={onClick}>
+    <div className="mb-4 flex justify-center">
       <div className="relative rounded-lg overflow-hidden group shadow-md w-full">
         {/* 고정된 1:1 비율 이미지 컨테이너 */}
         <div className="relative" style={{ paddingBottom: '100%' }}>
@@ -97,33 +113,71 @@ const PostItem = React.memo(({ post, onClick }: Props) => {
         </div>
 
         {/* 호버 오버레이 */}
-        <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 text-white p-4 flex flex-col transition-opacity duration-300">
-          {/* 제목 - 왼쪽 상단 */}
-          <p className="text-lg font-semibold line-clamp-2 mb-2">
-            {post.title || '제목 없음'}
-          </p>
-
-          {/* 하단 영역 (태그 + 프로필) */}
-          <div className="mt-auto flex justify-between items-end">
-            {/* 태그 영역 - 왼쪽 */}
-            <div className="flex flex-wrap gap-2 max-w-[70%]">
-              {post.tags?.split(',').map((tag, index) => (
-                <TagItem key={index} tag={tag.trim()} />
-              ))}
-            </div>
-
-            {/* 프로필 이미지 - 오른쪽 */}
-            <div className="w-10 h-10">
-              <Avvvatars
-                value={post.author?.profile_image || post.author?.nickname}
-                style="shape"
-                size={40}
-                border
-                borderColor="#ffffff"
-              />
+        {ismyPage ? (
+          <div
+            className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 text-white p-4 flex flex-col transition-opacity duration-300"
+            onClick={
+              isMobile
+                ? e => {
+                    e.stopPropagation();
+                    onEdit();
+                  }
+                : undefined
+            }
+          >
+            <div className="flex-grow flex items-center justify-center gap-4">
+              {/* 여기엔 lucide-react의 수정버튼이 있고 해당 버튼을 클릭하면 수정페이지로 넘어갑니다. 수정버튼은 해당 div의 중간에 배치되면 됩니다. */}
+              <button
+                onClick={e => {
+                  e.stopPropagation(); // 상위 div의 onClick (onClick={onClick}) 방지
+                  onEdit(); // 상위 PostList에서 전달한 onEdit 실행
+                }}
+                className="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-40 transition"
+                aria-label="수정하기"
+              >
+                <Edit3 size={30} />
+              </button>{' '}
+              <button
+                onClick={onClick}
+                className="p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-40 transition"
+                aria-label="수정하기"
+              >
+                <Eye size={30} />
+              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div
+            className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 text-white p-4 flex flex-col transition-opacity cursor-pointer duration-300"
+            onClick={onClick}
+          >
+            {/* 제목 - 왼쪽 상단 */}
+            <p className="text-lg font-semibold line-clamp-2 mb-2">
+              {post.title || '제목 없음'}
+            </p>
+
+            {/* 하단 영역 (태그 + 프로필) */}
+            <div className="mt-auto flex justify-between items-end">
+              {/* 태그 영역 - 왼쪽 */}
+              <div className="flex flex-wrap gap-2 max-w-[70%]">
+                {post.tags?.split(',').map((tag, index) => (
+                  <TagItem key={index} tag={tag.trim()} />
+                ))}
+              </div>
+
+              {/* 프로필 이미지 - 오른쪽 */}
+              <div className="w-10 h-10">
+                <Avvvatars
+                  value={post.author?.profile_image || post.author?.nickname}
+                  style="shape"
+                  size={40}
+                  border
+                  borderColor="#ffffff"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
