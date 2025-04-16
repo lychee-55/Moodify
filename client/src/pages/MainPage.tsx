@@ -23,7 +23,9 @@ export default function MainPage() {
       <div className="h-full">
         <Nav />
         <PopularMood />
-        <PostList />
+        <PostList
+          fetchUrl={`${process.env.REACT_APP_API_SERVER}/li/moodPosts/view/moodList`}
+        />
       </div>
     </>
   );
