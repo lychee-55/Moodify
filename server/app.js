@@ -1,9 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const db = require('./models');
-const env = 'development';
-const cors = require('cors');
+//수정 전
+// const env = 'development';
+// const config = require('./config/config.json')[env];
+//수정후후
+const env = process.env.NODE_ENV || 'development';
 const config = require('./config/config.json')[env];
+const cors = require('cors');
 const session = require('express-session');
 const passport = require('./config/passport');
 const path = require('path');
@@ -22,6 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // 정적 
 app.use(
   cors({
     origin: 'http://localhost:3000',
+    // origin: 'http://43.201.82.42',
     credentials: true, // 쿠키 전송 허용
   }),
 );
@@ -47,9 +52,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // router설정
-app.get('/', (req, res) => {
-  res.json({ msg: 'Index' });
-});
+// app.get('/', (req, res) => {
+//   res.json({ msg: 'Index' });
+// });
 
 const userRouter = require('./routes/user');
 const moodRouter = require('./routes/moodPosts');
@@ -59,6 +64,14 @@ app.use('/li/user', userRouter);
 app.use('/li/moodPosts', moodRouter);
 app.use('/li/moodPost/favor', likeNmarkRouter);
 app.use('/li/moodPost/myPage', myPageRouter);
+
+// // 2. 정적 파일 서빙
+// app.use(express.static(path.join(__dirname, 'build'))); // 여기에 build 경로 정확히!
+
+// // 3. 리액트 라우터 대응 (SPA fallback)
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
 
 db.sequelize
   .sync({ force: false })

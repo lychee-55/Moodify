@@ -2,6 +2,9 @@
 const db = require('../models');
 const express = require('express');
 const axios = require('axios');
+const env = process.env.NODE_ENV || 'development';
+const config = require('../config/config.json')[env];
+const youtubeConfig = config.youtube;
 // const Post = db.Post;
 // const Music = db.Music;
 // const User = db.User;
@@ -11,6 +14,7 @@ const getYouTubeVideoId = require('../config/youtubeAPI');
 
 const responseUtil = require('../utils/responseUtil');
 const upload = require('../middlewares/uploads');
+const { Op } = require('sequelize');
 
 exports.searchMusic = async (req, res) => {
   const { q: query, page = 1 } = req.query;
@@ -57,17 +61,68 @@ exports.searchMusic = async (req, res) => {
 };
 
 // 음악 제목과 아티스트로 YouTube 영상 ID 검색
-exports.searchMusicVideo = async (req, res) => {
-  const { keyword } = req.query; // 프론트에서 "제목 아티스트"로 넘김
+exports.searchYouTubeAudio = async (req, res) => {
+  console.log('🎵 컨트롤러 진입'); // 무조건 출력되게 분리
+  console.log('📦 쿼리:', req.query);
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+
+  // console.log('🎵 컨트롤러 진입: ', req.query);
+  const { title, artist, post_id } = req.query;
+
+  const query = `${title} ${artist} audio`; // 예: 'Shape of You Ed Sheeran audio'
+  const apiKey = youtubeConfig.my_api_key;
+
   try {
-    const videoId = await getYouTubeVideoId(keyword);
-    if (videoId) {
-      return res.json({ videoId });
-    } else {
-      return res.status(404).json({ message: 'No video found' });
-    }
+    // const response = await axios.get(
+    //   'https://www.googleapis.com/youtube/v3/search',
+    //   {
+    //     params: {
+    //       q: query,
+    //       part: 'snippet',
+    //       maxResults: 1,
+    //       key: apiKey,
+    //       type: 'video',
+    //     },
+    //   },
+    // );
+    // https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=48&key=[YOUR_API_KEY]를
+    const response = await axios.get(
+      'https://www.googleapis.com/youtube/v3/search',
+      {
+        params: {
+          part: 'snippet',
+          maxResults: 5,
+          key: youtubeConfig.my_api_key,
+          q: `${title} ${artist} audio`,
+          type: 'video',
+        },
+      },
+    );
+
+    const videoId = response.data.items[0]?.id.videoId;
+    if (!videoId)
+      return res
+        .status(400)
+        .send(responseUtil('ERROR', '음원을 찾을 수 없습니다.', null));
+
+    res
+      .status(200)
+      .send(responseUtil('SUCCESS', '음원찾기에 성공했습니다.', videoId));
   } catch (err) {
-    return res.status(500).json({ message: 'YouTube search failed' });
+    console.error('YouTube 검색 오류:', err);
+    console.error(
+      '❌ YouTube API 요청 실패:',
+      error.response?.data || error.message,
+    );
+    res
+      .status(500)
+      .send(
+        responseUtil('ERROR', '검색 오류: 음원 검색에 실패했습니다.', null),
+      );
   }
 };
 
@@ -157,15 +212,49 @@ exports.postCreateMood = async (req, res) => {
   }
 };
 
-exports.patchMood = (req, res) => {};
+exports.getAllMoodList = async (req, res) => {
+  const page = parseInt(req.query.page) || 1; // 기본값 1
+  const limit = parseInt(req.query.limit) || 10; // 기본값 10
+  const offset = (page - 1) * limit;
 
-exports.softDeleteMood = (req, res) => {};
+  try {
+    const posts = await Post.findAll({
+      attributes: ['post_id', 'title', 'post_image', 'tags'],
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['user_id', 'profile_image', 'nickname'],
+          required: true,
+        },
+      ],
+      order: [['created_at', 'DESC']],
+      offset: offset,
+      limit: limit,
+    });
 
-exports.hardDeleteMood = (req, res) => {};
+    const formattedPosts = posts.map(post => ({
+      post_id: post.post_id,
+      title: post.title,
+      post_image: post.post_image,
+      tags: post.tags,
+      author: {
+        user_id: post.author.user_id,
+        nickname: post.author.nickname,
+        profile_image: post.author.profile_image,
+      },
+    }));
 
-exports.patchRestoreMood = (req, res) => {};
-
-exports.getAllMoodList = (req, res) => {};
+    return res
+      .status(200)
+      .send(responseUtil('SUCCESS', '전체 게시글 조회 성공', formattedPosts));
+  } catch (error) {
+    console.error('게시글 조회 오류:', error);
+    return res
+      .status(500)
+      .send(responseUtil('ERROR', '전체 조회 서버 오류', null));
+  }
+};
 
 // router.get('/view/:post_id', controller.getOneMoodPost);
 exports.getOneMoodPost = async (req, res) => {
@@ -201,7 +290,7 @@ exports.getOneMoodPost = async (req, res) => {
       ],
     });
 
-    console.log(post);
+    console.log('getonepost:', post);
     if (!post) {
       return res
         .status(404)
@@ -235,6 +324,7 @@ exports.getOneMoodPost = async (req, res) => {
     // });
 
     const responseData = {
+      postId: post.post_id,
       imageUrl: post.post_image, // 게시글 이미지
       title: post.title,
       content: post.content,
@@ -264,4 +354,66 @@ exports.getOneMoodPost = async (req, res) => {
 
 exports.getPopularMoods = (req, res) => {};
 
-exports.getFilteredMood = (req, res) => {};
+// 게시글 검색 조회
+// router.get('/search', controller.getFilteredMood);
+exports.getFilteredMood = async (req, res) => {
+  const keyword = req.query.keyword;
+  console.log('getfilterpost::', keyword);
+
+  if (!keyword) {
+    return res
+      .status(400)
+      .send(responseUtil('ERROR', '검색어를 입력해주세요.', null));
+  }
+  // const page = parseInt(req.query.page) || 1;
+  // const limit = parseInt(req.query.limit) || 10;
+  // const offset = (page - 1) * limit;
+
+  try {
+    const results = await Post.findAll({
+      where: {
+        [Op.or]: [
+          { title: { [Op.like]: `%${keyword}%` } },
+          { content: { [Op.like]: `%${keyword}%` } },
+          { tags: { [Op.like]: `%${keyword}%` } },
+          // { location: { [Op.like]: `%${keyword}%` } },
+        ],
+      },
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['user_id', 'nickname', 'profile_image'],
+        },
+        {
+          model: Music,
+          as: 'music',
+          attributes: ['music_id', 'music_title', 'artist', 'thumbnail'],
+        },
+      ],
+      order: [['created_at', 'DESC']],
+    });
+
+    const formattedPosts = results.map(post => ({
+      post_id: post.post_id,
+      title: post.title,
+      post_image: post.post_image,
+      tags: post.tags,
+      author: {
+        user_id: post.author.user_id,
+        nickname: post.author.nickname,
+        profile_image: post.author.profile_image,
+      },
+    }));
+    console.log('search data::', formattedPosts);
+
+    return res
+      .status(200)
+      .send(responseUtil('SUCCESS', '검색 게시글 조회 성공', formattedPosts));
+  } catch (error) {
+    console.error('검색 오류:', error);
+    return res
+      .status(500)
+      .send(responseUtil('ERROR', '검색 중 서버 오류', null));
+  }
+};

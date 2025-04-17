@@ -32,6 +32,9 @@ router.get('/profile', controller.getMyProfile);
 router.post('/profile/check-password', controller.postCheckPassword);
 
 router.put('/profile', controller.putMyProfile);
+
+router.post('/find-password', controller.resetPassword);
+
 //회원탈퇴
 router.post('/delete', controller.deleteUser);
 

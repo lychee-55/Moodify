@@ -5,8 +5,8 @@
 // const basename = path.basename(__filename);
 const Sequelize = require('sequelize');
 // const process = require('process');
-const env = 'development';
-const config = require(__dirname + '/../config/config.json')[env];
+const env = process.env.NODE_ENV || 'development';
+const config = require('../config/config.json')[env];
 const db = {};
 
 // (1) Sequelize 클래스를 통해서 sequelize 객체를 생성

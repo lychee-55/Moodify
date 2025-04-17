@@ -2,13 +2,17 @@ const { Op } = require('sequelize'); // 이 줄을 추가
 const db = require('../models');
 const express = require('express');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const axios = require('axios');
 const User = db.User;
 const passport = require('passport');
 const responseUtil = require('../utils/responseUtil');
-const env = 'development';
-const config = require(__dirname + '/../config/config.json')[env];
+const env = process.env.NODE_ENV || 'development';
+const config = require('../config/config.json')[env];
+// const config = require(__dirname + '/../config/config.json')[env];
 const kakaoConfig = config.kakao;
+const googleConfig = config.google;
+const nodemailer = require('nodemailer');
 
 exports.getTest = (req, res) => {
   res.send({ message: 'test' });
@@ -82,17 +86,17 @@ exports.getCheckNickname = async (req, res) => {
     if (existNickname) {
       return res
         .status(200)
-        .send(responseUtil('ERROR', '이미 사용 중인 닉네임입니다.', null));
+        .json(responseUtil('ERROR', '이미 사용 중인 닉네임입니다.', null));
     }
 
     return res
       .status(200)
-      .send(responseUtil('SUCCESS', '사용 가능한 닉네임입니다.', null));
+      .json(responseUtil('SUCCESS', '사용 가능한 닉네임입니다.', null));
   } catch (error) {
     console.error('닉네임 중복 확인 오류:', error);
     return res
       .status(500)
-      .send(
+      .json(
         responseUtil(
           'ERROR',
           '서버에러가 생겼습니다. 관리자에게 문의하세요.',
@@ -105,6 +109,7 @@ exports.getCheckNickname = async (req, res) => {
 exports.getCheckEmail = async (req, res) => {
   try {
     const { email } = req.query;
+    console.log('emailcheck 라우터입니당');
     console.log('User model definition:', db.User); // 모델 확인
     console.log(req.query);
 
@@ -113,7 +118,7 @@ exports.getCheckEmail = async (req, res) => {
     if (!emailRegex.test(email)) {
       return res
         .status(400)
-        .send(responseUtil('ERROR', '유효한 이메일 형식이 아닙니다.', null));
+        .json(responseUtil('ERROR', '유효한 이메일 형식이 아닙니다.', null));
     }
 
     const existEmail = await User.findOne({
@@ -123,17 +128,17 @@ exports.getCheckEmail = async (req, res) => {
     if (existEmail) {
       return res
         .status(200)
-        .send(responseUtil('ERROR', '이미 사용 중인 이메일입니다.', null));
+        .json(responseUtil('ERROR', '이미 사용 중인 이메일입니다.', null));
     }
 
     return res
       .status(200)
-      .send(responseUtil('SUCCESS', '사용 가능한 이메일입니다.', null));
+      .json(responseUtil('SUCCESS', '사용 가능한 이메일입니다.', null));
   } catch (error) {
     console.error('이메일 중복 확인 오류:', error);
     return res
       .status(500)
-      .send(
+      .json(
         responseUtil(
           'ERROR',
           '서버에러가 생겼습니다. 관리자에게 문의하세요.',
@@ -481,6 +486,88 @@ exports.postCheckPassword = async (req, res) => {
   } catch (error) {
     console.error('비밀번호 확인 오류:', error);
     return res.send(responseUtil('ERROR', '서버 오류가 발생했습니다.'));
+  }
+};
+
+// 임시비번 생성
+exports.resetPassword = async (req, res) => {
+  const { email } = req.body;
+  console.log('email확인:', email);
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res
+        .status(401)
+        .send(responseUtil('ERROR', '가입된 사용자가 없습니다.', null));
+    }
+
+    // 2. 비밀번호 암호화
+    // const saltRounds = 10;
+    // const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // 임시 비밀번호 생성
+    const tempPassword = crypto.randomBytes(6).toString('hex');
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // 비밀번호 업데이트
+    await user.update({ password_hash: hashedPassword });
+
+    // 이메일 발송
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // true for 465, false for 587
+      auth: {
+        user: googleConfig.SMTP_USER,
+        pass: googleConfig.SMTP_PASS,
+      },
+    });
+    console.log('googleConfig.SMTP_USER', googleConfig.SMTP_USER);
+    await transporter.sendMail({
+      from: `Moodify팀 <${googleConfig.SMTP_USER}>`,
+      to: email,
+      subject: '[Moodify] 임시 비밀번호 안내',
+      html: `
+      <div style="max-width: 480px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; padding: 32px 24px; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <img src="https://yourdomain.com/logo.png" alt="Moodify Logo" style="width: 120px; height: auto;" />
+        </div>
+        <h2 style="text-align: center; color: #333333; margin-bottom: 24px;">비밀번호 재설정 안내</h2>
+        <p><strong>${user.nickname}</strong>님, 안녕하세요 👋</p>
+        <p>요청하신 <strong>임시 비밀번호</strong>는 아래와 같습니다.</p>
+        <div style="text-align: center; margin: 24px 0;">
+          <span style="display: inline-block; background-color: #f2f2f2; padding: 12px 24px; font-size: 20px; font-weight: bold; color: #222; border-radius: 8px;">
+            ${tempPassword}
+          </span>
+        </div>
+        <p style="margin-bottom: 16px;">해당 임시 비밀번호로 로그인하신 후 <strong>비밀번호를 꼭 변경</strong>해 주세요.</p>
+        <div style="text-align: center; margin-top: 32px;">
+          <a href="http://localhost:3000/li/user/login" style="background-color: #6C63FF; color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">Moodify 로그인하러 가기</a>
+        </div>
+        <p style="margin-top: 40px; font-size: 12px; color: #888; text-align: center;">
+          본 메일은 회원님의 요청에 따라 발송되었습니다. 문의 사항은 moodify@support.com 으로 연락주세요.
+        </p>
+      </div>
+`,
+    });
+
+    return res
+      .status(200)
+      .send(
+        responseUtil(
+          'SUCCESS',
+          '임시 비밀번호가 이메일로 전송되었습니다.',
+          null,
+        ),
+      );
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .send(
+        responseUtil('ERROR', '비밀번호 초기화 중 오류가 발생했습니다.', null),
+      );
   }
 };
 
