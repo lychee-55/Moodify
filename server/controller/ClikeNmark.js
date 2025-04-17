@@ -2,17 +2,189 @@
 const db = require('../models');
 const express = require('express');
 const axios = require('axios');
-const Posts = require('../models/Posts');
-const PostLikes = require('../models/PostLike');
-const Bookmarks = require('../models/Bookmark');
+const env = process.env.NODE_ENV || 'development';
+const config = require('../config/config.json')[env];
+const { Post, Music, User, PostLike, Bookmark } = db;
+const responseUtil = require('../utils/responseUtil');
 
-exports.postIncreaseLike = (req, res) => {};
+exports.postIncreaseLike = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
 
-exports.patchLikeQuantity = (req, res) => {};
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+    const { post_id } = req.body;
 
-exports.postIncreaseMark = (req, res) => {};
+    if (!sessionUser) {
+      return res.send(
+        responseUtil('ERROR', '가입된 사용자만 사용 가능합니다.', null),
+      );
+    }
 
-exports.patchMarkQuantity = (req, res) => {};
+    const [like, created] = await PostLike.findOrCreate({
+      where: { user_id: sessionUser, post_id },
+      defaults: { status: 'active' },
+    });
+
+    if (!created && like.status === 'inactive') {
+      like.status = 'active';
+      await like.save();
+
+      // 좋아요 수 증가
+      await Post.increment('likes_count', {
+        by: 1,
+        where: { post_id },
+      });
+    } else if (created) {
+      // 새로 생성된 경우 좋아요 수 증가
+      await Post.increment('likes_count', {
+        by: 1,
+        where: { post_id },
+      });
+    }
+
+    const totalLikes = await PostLike.count({
+      where: { post_id, status: 'active' },
+    });
+
+    return res.send(
+      responseUtil('SUCCESS', '좋아요 반영 완료', { totalLikes }),
+    );
+  } catch (err) {
+    console.error(err);
+    return res.send(responseUtil('ERROR', '좋아요 처리 중 오류 발생', null));
+  }
+};
+
+exports.patchLikeQuantity = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+    const { post_id } = req.body;
+
+    if (!sessionUser) {
+      return res.send(
+        responseUtil('ERROR', '가입된 사용자만 사용 가능합니다.', null),
+      );
+    }
+
+    const like = await PostLike.findOne({
+      where: { user_id: sessionUser, post_id },
+    });
+
+    if (!like) {
+      return res.send(
+        responseUtil('ERROR', '좋아요 정보가 존재하지 않습니다.', null),
+      );
+    }
+
+    if (like.status === 'active') {
+      like.status = 'inactive';
+      await like.save();
+
+      // 좋아요 수 감소 (최소 0)
+      const post = await Post.findByPk(post_id);
+      if (post.likes_count > 0) {
+        await Post.decrement('likes_count', {
+          by: 1,
+          where: { post_id },
+        });
+      }
+    } else {
+      like.status = 'active';
+      await like.save();
+
+      // 좋아요 수 증가
+      await Post.increment('likes_count', {
+        by: 1,
+        where: { post_id },
+      });
+    }
+
+    const totalLikes = await PostLike.count({
+      where: { post_id, status: 'active' },
+    });
+
+    return res.send(
+      responseUtil('SUCCESS', '좋아요 상태 변경 완료', { totalLikes }),
+    );
+  } catch (err) {
+    console.error(err);
+    return res.send(responseUtil('ERROR', '좋아요 상태 변경 중 오류 발생'));
+  }
+};
+
+exports.postIncreaseMark = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+    const { post_id } = req.body;
+
+    const existingBookmark = await Bookmark.findOne({
+      where: { user_id: sessionUser, post_id },
+    });
+
+    if (!existingBookmark) {
+      await Bookmark.create({
+        user_id: sessionUser,
+        post_id,
+        status: 'active',
+      });
+    } else if (existingBookmark.status === 'inactive') {
+      await existingBookmark.update({ status: 'active' });
+    }
+
+    return res
+      .status(200)
+      .send(responseUtil('SUCCESS', '북마크 저장 완료', { bookmarked: true }));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send(responseUtil('ERROR', '서버 오류 발생'));
+  }
+};
+
+exports.patchMarkQuantity = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+    const { post_id } = req.body;
+
+    const bookmark = await Bookmark.findOne({
+      where: { user_id: sessionUser, post_id, status: 'active' },
+    });
+
+    if (!bookmark) {
+      return res.status(400).send(responseUtil('ERROR', '북마크가 없습니다.'));
+    }
+
+    await bookmark.update({ status: 'inactive' });
+
+    return res.send(
+      responseUtil('SUCCESS', '북마크 취소 완료', { bookmarked: false }),
+    );
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send(responseUtil('ERROR', '서버 오류 발생'));
+  }
+};
 
 // // 주간 좋아요 필터링
 // const getTopLikedPosts = async period => {
