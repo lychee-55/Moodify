@@ -81,15 +81,6 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
     loadPosts();
   }, [page, fetchUrl, queryParams]);
 
-  // useEffect(() => {
-  //   // fetchUrl이나 queryParams가 변경될 때마다 상태 초기화
-  //   setPosts([]);
-  //   setPage(1);
-  //   setHasMore(true);
-  // }, [fetchUrl, JSON.stringify(queryParams)]); // queryParams도 문자열로 변환하여 비교
-
-  // page가 변경되었을 때 실행되는 로직을 분리하고,
-  // fetchUrl, queryParams가 바뀔 때는 page부터 리셋
   useEffect(() => {
     setPosts([]);
     setPage(1);
@@ -118,15 +109,23 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
   }, [hasMore, fetchUrl]); // fetchUrl도 여기에 포함
 
   return (
-    <div className="mx-auto px-4 w-full max-w-[1800px]">
+    <div className="mx-auto px-4 w-full max-w-full">
       <div
+        // className={`
+        //   grid gap-4
+        //   grid-cols-2
+        //   sm:grid-cols-3
+        //   md:grid-cols-3
+        //   lg:grid-cols-4
+        //   w-full max-w-full mx-auto
+        // `}
         className={`
           grid gap-4
           grid-cols-2
           sm:grid-cols-3
           md:grid-cols-3
           lg:grid-cols-4
-          w-full sm:w-[600px] md:w-[800px] lg:w-[1000px] mx-auto
+          w-full max-w-screen-lg mx-auto
         `}
       >
         {posts.map(post => (
@@ -147,7 +146,11 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
       </div>
 
       {selectedPostId !== null && !isEditMode && (
-        <DescriptionPage postId={selectedPostId} onClose={handleClosePost} />
+        <DescriptionPage
+          postId={selectedPostId}
+          onClose={handleClosePost}
+          fetchUrl={`${process.env.REACT_APP_API_SERVER}/li/moodPosts/view/${selectedPostId}`}
+        />
       )}
 
       {selectedPostId !== null && isEditMode && (

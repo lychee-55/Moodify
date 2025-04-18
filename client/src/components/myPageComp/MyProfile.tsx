@@ -1,10 +1,11 @@
 // src/pages/MyProfile.tsx
-import { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Settings, Trash2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Avvvatars from 'avvvatars-react';
 import useUserData from '../../hook/useUserData';
 import PostList from '../main/moodPost/PostList';
+import DeletedMoods from '../moodPost/DeletedMoods';
 
 export default function MyProfile() {
   const navigate = useNavigate();
@@ -14,6 +15,25 @@ export default function MyProfile() {
   const ismyPage = location.pathname.endsWith('myMoodPosts');
   const isLike = location.pathname.endsWith('likes');
   const isBookmark = location.pathname.endsWith('marks');
+
+  const [isModalOpen, setIsModalOpen] = useState(false); // 모달 열고 닫기 상태
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // ✅ 처음 마운트 시 기본 경로로 리디렉션
+  useEffect(() => {
+    if (
+      location.pathname === '/li/user/myPage' ||
+      location.pathname === '/li/user/myPage/'
+    ) {
+      navigate('myMoodPosts', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 md:px-12">
       {/* 마이 프로필 섹션 */}
@@ -79,6 +99,18 @@ export default function MyProfile() {
           북마크
         </button>
       </div>
+
+      <div className="fixed bottom-8 right-8">
+        <button
+          className="w-14 h-14 rounded-full bg-white border-4 border-[#adcf56] hover:border-[#8aac34] bg-gray-300 transition flex items-center justify-center"
+          onClick={openModal} // 모달 열기
+        >
+          <Trash2 size={24} />
+        </button>
+      </div>
+
+      {/* 삭제된 게시글 모달 */}
+      {isModalOpen && <DeletedMoods onClose={closeModal} />}
     </div>
   );
 }

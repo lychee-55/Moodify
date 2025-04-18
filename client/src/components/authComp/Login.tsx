@@ -133,7 +133,7 @@ export default function Login() {
             <div className="flex items-center justify-end">
               <div className="text-sm">
                 <Link
-                  to="/find-password"
+                  to="/li/user/find-password"
                   className="font-medium text-[#adcf56] hover:text-[#8aac34] flex items-center"
                 >
                   비밀번호를 잊으셨나요?

@@ -3,6 +3,7 @@ import axios from 'axios';
 import ImageUpload from '../../moodPost/ImageUpload';
 import SearchMusic from '../../moodPost/SearchMusic';
 import TagInput from '../../moodPost/TagInput';
+import DeleteMoodBtn from '../../moodPost/DeleteMoodBtn';
 
 type MusicData = {
   music_title: string;
@@ -224,6 +225,8 @@ export default function EditPost({ postId, onClose }: EditPostProps) {
           </div>
 
           <div className="flex justify-end space-x-4">
+            <DeleteMoodBtn postId={postId} onClose={onClose} />
+
             <button
               type="button"
               onClick={onClose}

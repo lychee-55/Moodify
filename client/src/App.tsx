@@ -13,8 +13,22 @@ import MyProfilePage from './pages/MyProfilePage';
 import DescriptionPage from './pages/DescriptionPage';
 import PostList from './components/main/moodPost/PostList';
 import SearchResultPage from './pages/SearchResultPage';
+import FindPassword from './components/authComp/FindPassword';
+import DeletedMoods from './components/moodPost/DeletedMoods';
+import { useState } from 'react';
 
 function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 모달을 열기 위한 함수
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // 모달을 닫기 위한 함수
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
   return (
     <>
       <BrowserRouter>
@@ -26,6 +40,7 @@ function App() {
             <Route path="/" element={<MainPage />} />
             <Route path="/li/user/login" element={<LoginPage />} />
             <Route path="/li/user/sign-up" element={<SignupPage />} />
+            <Route path="/li/user/find-password" element={<FindPassword />} />
             <Route path="/li/user/profile" element={<MyProfilePage />} />
             {/* <Route path="/li/user/EditPostModal" element={<EditPostModal />} /> */}
 
@@ -58,10 +73,11 @@ function App() {
             <Route path="/li/moodPosts/create" element={<CreateMoodPage />}>
               {/* <Route path="search-music" element={<SearchMusic />} /> */}
             </Route>
-            <Route
-              path="/li/moodPosts/view/:filter"
-              element={<SearchResultPage />}
-            />
+            <Route path="/li/moodPosts/search" element={<SearchResultPage />} />
+            {/* <Route
+              path="/li/moodPost/myPage/myMoodPosts/view/deletedMoodList"
+              element={<DeletedMoods onClose={closeModal} />}
+            /> */}
             {/* <Route
               path="/li/moodposts/view/:post_id"
               element={<DescriptionPage />}

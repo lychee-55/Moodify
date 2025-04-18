@@ -1,5 +1,5 @@
 // components/PostItem.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Post } from '../../../types/post';
 import Avvvatars from 'avvvatars-react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -81,6 +81,20 @@ const PostItem = React.memo(({ post, onClick, onEdit }: Props) => {
   const imageUrl = getImageUrl();
   const showImage = imageUrl && !imageError;
 
+  const pastelColors = [
+    '#FADADD', // 연한 핑크
+    '#D1F2EB', // 연한 민트
+    '#FFFACD', // 연한 노랑
+    '#E0BBE4', // 연한 라일락
+    '#B5EAD7', // 연한 그린
+    '#FFDAC1', // 연한 살구
+    '#CDE7F0', // 연한 블루
+  ];
+  const avatarBackgroundColor = useMemo(() => {
+    const randomIndex = Math.floor(Math.random() * pastelColors.length);
+    return pastelColors[randomIndex];
+  }, []);
+
   return (
     <div className="mb-4 flex justify-center">
       <div className="relative rounded-lg overflow-hidden group shadow-md w-full">
@@ -96,7 +110,8 @@ const PostItem = React.memo(({ post, onClick, onEdit }: Props) => {
             />
           ) : (
             <div
-              className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-[#adcf56]"
+              className="absolute top-0 left-0 w-full h-full flex items-center justify-center "
+              style={{ backgroundColor: avatarBackgroundColor }} // 배경 색상 적용
               ref={avatarContainerRef}
             >
               <div className="overflow-hidden rounded-none w-[90%] h-[90%] flex items-center justify-center">

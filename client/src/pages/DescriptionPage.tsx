@@ -28,9 +28,13 @@ interface Post {
 interface Props {
   postId: number;
   onClose: () => void;
+  fetchUrl: string;
 }
+// interface PostListProps {
+//   queryParams?: Record<string, any>;
+// }
 
-export default function DescriptionPage({ postId, onClose }: Props) {
+export default function DescriptionPage({ postId, onClose, fetchUrl }: Props) {
   const [post, setPost] = useState<Post | null>(null);
   const [isImageNull, setIsImageNull] = useState(false);
   // const postId = 2; // 추후에는 URL 파라미터나 상태 등에서 가져올 수 있습니다.
@@ -44,12 +48,9 @@ export default function DescriptionPage({ postId, onClose }: Props) {
   useEffect(() => {
     const fetchPostDetail = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_SERVER}/li/moodPosts/view/${postId}`,
-          {
-            withCredentials: true,
-          },
-        );
+        const response = await axios.get(fetchUrl, {
+          withCredentials: true,
+        });
         setPost(response.data.data);
         console.log('프론트에서 받은 response.data입니다.:::', response.data);
 
