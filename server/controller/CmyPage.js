@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const env = process.env.NODE_ENV || 'development';
 const config = require('../config/config.json')[env];
+const { Op } = require('sequelize');
 
 const { Post, Music, User, PostLike, Bookmark } = db;
 const responseUtil = require('../utils/responseUtil');
@@ -220,11 +221,285 @@ exports.patchMood = async (req, res) => {
   }
 };
 
-exports.softDeleteMood = (req, res) => {};
+// controllers/Cmoodpost.js
+// controllers/moodPostController.js (예시 위치)
+exports.softDeleteMood = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
 
-exports.hardDeleteMood = (req, res) => {};
+  const { post_id } = req.params;
 
-exports.patchRestoreMood = (req, res) => {};
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+
+    // 소프트 삭제 대상 게시글 찾기
+    const post = await Post.findOne({
+      where: {
+        post_id: post_id,
+        user_id: sessionUser,
+      },
+    });
+
+    if (!post) {
+      return res
+        .status(400)
+        .send(responseUtil('ERROR', '게시글을 찾을 수 없습니다.', null));
+    }
+
+    // Sequelize 소프트 삭제 (deleted_at에 시간 기록됨)
+    await Post.destroy({ where: { post_id: post_id } });
+
+    return res
+      .status(200)
+      .send(responseUtil('SUCCESS', '게시글이 삭제되었습니다.', null));
+  } catch (error) {
+    console.error('게시글 소프트 삭제 오류:', error);
+    return res
+      .status(500)
+      .send(responseUtil('ERROR', '게시글 삭제 중 오류가 발생했습니다.', null));
+  }
+};
+
+exports.getDeletedMoodList = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+  console.log('deletedpost에 들어옴');
+  const page = parseInt(req.query.page) || 1; // 기본값 1
+  const limit = parseInt(req.query.limit) || 10; // 기본값 10
+  const offset = (page - 1) * limit;
+
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+    const posts = await Post.findAll({
+      where: {
+        user_id: sessionUser,
+      },
+      // 여기가 핵심
+      paranoid: false, // 삭제된 게시글도 포함하여 조회
+      attributes: ['post_id', 'title', 'post_image', 'tags', 'deleted_at'],
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['user_id', 'profile_image', 'nickname'],
+          required: true,
+        },
+      ],
+      order: [['created_at', 'DESC']],
+      offset: offset,
+      limit: limit,
+    });
+
+    const deletedPosts = posts.filter(post => post.deleted_at !== null);
+
+    const formattedPosts = deletedPosts.map(post => ({
+      post_id: post.post_id,
+      title: post.title,
+      post_image: post.post_image,
+      tags: post.tags,
+      author: {
+        user_id: post.author.user_id,
+        nickname: post.author.nickname,
+        profile_image: post.author.profile_image,
+      },
+    }));
+
+    return res
+      .status(200)
+      .send(
+        responseUtil(
+          'SUCCESS',
+          '내 삭제된 게시글 목록 조회 성공',
+          formattedPosts,
+        ),
+      );
+  } catch (error) {
+    console.error('내 삭제된 게시글 목록 조회 오류:', error);
+    return res
+      .status(500)
+      .send(
+        responseUtil('ERROR', '내 삭제된 게시글 목록 조회 서버 오류', null),
+      );
+  }
+};
+
+exports.getOneDeletedMoodPost = async (req, res) => {
+  // 0. 통합 세션 확인 (가장 먼저 처리)
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+    const { post_id } = req.params;
+
+    const post = await Post.findOne({
+      where: { post_id: post_id },
+      paranoid: false,
+      include: [
+        {
+          model: Music,
+          as: 'music',
+          attributes: ['music_title', 'artist', 'thumbnail'],
+        },
+        {
+          model: User,
+          as: 'author',
+          attributes: ['nickname', 'profile_image'],
+        },
+      ],
+    });
+
+    if (!post || post.deleted_at === null) {
+      return res
+        .status(404)
+        .send(
+          responseUtil(
+            'ERROR',
+            '삭제된 게시글이 아니거나 존재하지 않습니다.',
+            null,
+          ),
+        );
+    }
+
+    // 좋아요 여부 확인
+    const liked = await PostLike.findOne({
+      where: {
+        post_id: post.post_id,
+        user_id: sessionUser,
+        status: 'active',
+      },
+    });
+
+    const bookmarked = await Bookmark.findOne({
+      where: {
+        post_id: post.post_id,
+        user_id: sessionUser,
+        status: 'active',
+      },
+    });
+
+    const responseData = {
+      postId: post.post_id,
+      imageUrl: post.post_image,
+      title: post.title,
+      content: post.content,
+      user: {
+        nickname: post.author.nickname,
+        profileImage: post.author.profile_image,
+      },
+      music: {
+        title: post.music.music_title,
+        artist: post.music.artist,
+        coverImage: post.music.thumbnail,
+      },
+      likes: post.likes_count || 0,
+      isLiked: !!liked,
+      isBookmarked: !!bookmarked,
+    };
+
+    return res
+      .status(200)
+      .send(
+        responseUtil('SUCCESS', '삭제된 게시글 상세 조회 성공', responseData),
+      );
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .send(responseUtil('ERROR', '삭제된 게시글 서버 오류', null));
+  }
+};
+
+// 게시글 영구 삭제 (DB에서 완전 삭제)
+exports.hardDeleteMood = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+
+  const { post_id } = req.params;
+
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+
+    const post = await Post.findOne({
+      where: {
+        post_id: post_id,
+        user_id: sessionUser,
+      },
+      paranoid: false, // soft-deleted된 레코드 포함하여 검색
+    });
+
+    if (!post || !post.deleted_at) {
+      return res
+        .status(404)
+        .send(
+          responseUtil('NOT_FOUND', '삭제된 게시글이 존재하지 않습니다.', null),
+        );
+    }
+
+    await post.destroy({ force: true }); // 영구 삭제
+    return res
+      .status(200)
+      .send(responseUtil('SUCCESS', '게시글이 영구 삭제되었습니다.', null));
+  } catch (error) {
+    console.error('영구 삭제 실패:', error);
+    return res
+      .status(500)
+      .send(responseUtil('ERROR', '서버 처리 중 오류가 발생했습니다.', null));
+  }
+};
+
+exports.patchRestoreMood = async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res
+      .status(401)
+      .send(responseUtil('ERROR', '로그인 상태가 아닙니다.', null));
+  }
+
+  const { post_id } = req.params;
+
+  try {
+    const sessionUser = req.session.passport.user.user_id;
+
+    const post = await Post.findOne({
+      where: {
+        post_id: post_id,
+        user_id: sessionUser,
+      },
+      paranoid: false, // 삭제된 데이터도 포함해서 찾음
+    });
+
+    if (!post || !post.deleted_at) {
+      return res
+        .status(404)
+        .send(
+          responseUtil('NOT_FOUND', '삭제된 게시글이 존재하지 않습니다.', null),
+        );
+    }
+
+    await post.restore();
+
+    return res
+      .status(200)
+      .send(responseUtil('SUCCESS', '게시글이 복구되었습니다.', null));
+  } catch (error) {
+    console.error('게시글 복구 오류:', error);
+    return res
+      .status(500)
+      .send(responseUtil('ERROR', '게시글 복구 중 오류가 발생했습니다.', null));
+  }
+};
 
 // [GET] 내가 좋아요한 게시글
 exports.getMyLikedMood = async (req, res) => {

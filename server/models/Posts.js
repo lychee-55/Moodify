@@ -81,13 +81,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      updated_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+      },
     },
     {
       tableName: 'posts',
-      timestamps: false, // created_at을 수동으로 관리하므로 true가 필요 없음
+      timestamps: true, // created_at을 수동으로 관리하므로 true가 필요 없음
       paranoid: true,
       createdAt: 'created_at',
       deletedAt: 'deleted_at',
+      updatedAt: 'updated_at',
       indexes: [
         { fields: ['user_id'] }, // FK 인덱스
         { fields: ['music_id'] },

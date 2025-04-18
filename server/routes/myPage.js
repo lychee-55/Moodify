@@ -13,11 +13,25 @@ router.patch(
   controller.patchMood,
 );
 
-router.delete('/:post_id', controller.softDeleteMood);
+// 포스트 소프트 삭제 및 조회 & 복구
+router.patch('/myMoodPosts/:post_id/soft-delete', controller.softDeleteMood);
 
-router.delete('/permanent/:post_id', controller.hardDeleteMood);
+router.get('/myMoodPosts/view/deletedMoodList', controller.getDeletedMoodList);
 
-router.patch('/restore/:post_id', controller.patchRestoreMood);
+router.get(
+  '/myMoodPosts/view/deletedMoodList/:post_id',
+  controller.getOneDeletedMoodPost,
+);
+
+router.patch(
+  '/myMoodPosts/view/deletedMoodList/:post_id/restore',
+  controller.patchRestoreMood,
+);
+
+router.delete(
+  '/myMoodPosts/view/deletedMoodList/:post_id/permanent-delete',
+  controller.hardDeleteMood,
+);
 
 // 마이페이지 - 좋아요
 router.get('/likes', controller.getMyLikedMood);

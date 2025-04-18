@@ -20,7 +20,7 @@ router.get(
 );
 
 // 이번달 베스트 조회
-router.get('/view/popularMood', controller.getPopularMoods);
+router.get('/view/main/popularMood', controller.getPopularMoods);
 
 // 게시글 검색 조회
 router.get('/search', controller.getFilteredMood);

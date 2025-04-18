@@ -12,3 +12,5 @@ DROP TABLE IF EXISTS users;
 
 -- 외래키 검사 재활성화
 SET FOREIGN_KEY_CHECKS = 1;
+
+SELECT * FROM SequelizeMeta;
