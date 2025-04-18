@@ -116,7 +116,7 @@ exports.searchYouTubeAudio = async (req, res) => {
     console.error('YouTube 검색 오류:', err);
     console.error(
       '❌ YouTube API 요청 실패:',
-      error.response?.data || error.message,
+      err.response?.data || err.message,
     );
     res
       .status(500)
@@ -352,7 +352,57 @@ exports.getOneMoodPost = async (req, res) => {
   }
 };
 
-exports.getPopularMoods = (req, res) => {};
+// 이번 달의 인기 게시글 Top 5 조회
+exports.getPopularMoods = async (req, res) => {
+  try {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    const popularMoods = await Post.findAll({
+      where: {
+        created_at: {
+          [Op.between]: [firstDayOfMonth, lastDayOfMonth],
+        },
+      },
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['user_id', 'nickname', 'profile_image'],
+        },
+      ],
+      order: [['likes_count', 'DESC']],
+      limit: 5,
+    });
+
+    const formatted = popularMoods.map(post => ({
+      post_id: post.post_id,
+      post_image: post.post_image,
+      title: post.title,
+      author: {
+        user_id: post.author.user_id,
+        nickname: post.author.nickname,
+        profile_image: post.author.profile_image,
+      },
+    }));
+
+    return res
+      .status(200)
+      .send(responseUtil('SUCCESS', '인기 게시글 조회 성공', formatted));
+  } catch (error) {
+    console.error('인기 게시글 조회 실패:', error);
+    return res.status(500).send(responseUtil('ERROR', '서버 오류', null));
+  }
+};
 
 // 게시글 검색 조회
 // router.get('/search', controller.getFilteredMood);
