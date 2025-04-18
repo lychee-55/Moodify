@@ -13,16 +13,15 @@ interface Post {
 }
 
 export default function MainPage() {
-  // const [posts, setPosts] = useState<Post[]>([]); // API에서
-  // const [loading, setLoading] = useState(true);
-
-  // if (loading) return <LoadingSpinner />;
-
   return (
     <>
       <div className="h-full">
         <Nav />
         <PopularMood />
+        {/* <div className="pt-10 max-w-screen-lg sm:px-4 md:px-4 lg:px-0 mx-auto"> */}
+        <div className="pt-10 px-4 max-w-screen-lg lg:px-0  mx-auto">
+          <h2 className="text-2xl font-bold mb-6">이런 무드는 어떤가요?</h2>
+        </div>
         <PostList
           fetchUrl={`${process.env.REACT_APP_API_SERVER}/li/moodPosts/view/moodList`}
         />

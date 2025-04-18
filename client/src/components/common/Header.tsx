@@ -21,7 +21,9 @@ export default function Header() {
   const handleSearch = () => {
     if (searchKeyword.trim()) {
       navigate(
-        `/li/moodPosts/view/${encodeURIComponent(searchKeyword.trim())}`,
+        `/li/moodPosts/search?keyword=${encodeURIComponent(
+          searchKeyword.trim(),
+        )}`,
       );
       setSearchKeyword('');
       setIsSearchOpen(false); // 모바일 검색창 닫기

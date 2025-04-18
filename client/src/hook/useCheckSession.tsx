@@ -36,7 +36,11 @@ const useCheckSession = () => {
 
   // 페이지 이동 시 세션 체크
   useEffect(() => {
-    const excludedPaths = ['/li/user/login', '/li/user/sign-up'];
+    const excludedPaths = [
+      '/li/user/login',
+      '/li/user/sign-up',
+      '/li/user/find-password',
+    ];
     if (excludedPaths.includes(location.pathname)) return;
 
     // 세션 체크 함수
