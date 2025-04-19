@@ -137,6 +137,7 @@ export default function EditPost({ postId, onClose }: EditPostProps) {
       if (status === 'SUCCESS') {
         alert(message || '게시글이 성공적으로 수정되었습니다.');
         onClose();
+        window.location.reload(); // 또는 상위 상태 업데이트
       } else {
         alert(message || '게시글 수정에 실패했습니다.');
       }

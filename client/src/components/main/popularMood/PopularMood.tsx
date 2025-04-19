@@ -7,6 +7,7 @@ import { SampleNextArrow, SamplePrevArrow } from './SlideArrow';
 import axios from 'axios';
 import BookCoverItem from './BoolCoverItem';
 import { Book } from '../../../types/post';
+import DescriptionPage from '../../../pages/DescriptionPage';
 
 const settings = {
   dots: true,
@@ -36,6 +37,15 @@ export default function PopularMood() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+
+  const handleBookClick = (postId: number) => {
+    setSelectedPostId(postId);
+  };
+
+  const handleClosePost = () => {
+    setSelectedPostId(null);
+  };
 
   useEffect(() => {
     const fetchPopularBooks = async () => {
@@ -61,15 +71,30 @@ export default function PopularMood() {
   if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
 
   return (
+    // pacifico-regular
     <div className="w-full max-w-[1000px] mx-auto p-[30px] box-border relative">
-      <h2 className="text-2xl font-bold mb-6 text-center">Popular Moods</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center ">
+        ✨이달의 베스트 <span className="pacifico-regular">Mood</span>✨
+      </h2>
       <Slider {...settings}>
         {books.map(book => (
           <div key={book.post_id} className="px-2 outline-none">
-            <BookCoverItem book={book} />
+            <BookCoverItem
+              book={book}
+              onClick={() => handleBookClick(book.post_id)}
+            />
           </div>
         ))}
       </Slider>
+
+      {/* 모달 */}
+      {selectedPostId && (
+        <DescriptionPage
+          postId={selectedPostId}
+          onClose={handleClosePost}
+          fetchUrl={`${process.env.REACT_APP_API_SERVER}/li/moodPosts/view/${selectedPostId}`}
+        />
+      )}
     </div>
   );
 }

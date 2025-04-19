@@ -35,69 +35,83 @@ export default function MyProfile() {
   }, [location.pathname, navigate]);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 md:px-12">
+    <div className="max-w-6xl mx-auto p-8 px-4  md:px-12">
       {/* 마이 프로필 섹션 */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-6">
-          <Avvvatars value={userData.profile_image} style="shape" size={96} />
-          {/* <img
+      {/* bg-gradient-to-r from-[#FFF8DC] via-[#FAF0BE] to-[#FFEFD5] shadow-md*/}
+      {/* <div className="flex items-center justify-between mb-8 bg-gradient-to-r from-[#fff3af] via-[#fff8d2] to-[#ffc963] py-6 px-6 rounded-lg shadow-[0_0_20px_rgba(255, 238, 138, 0.5)]"> */}
+      <div className="bg-gradient-to-b from-[#fffbeb] via-[#fffced] to-[#f5efcf] rounded-lg">
+        <div className="flex items-center justify-between mb-4  py-6 px-10  ">
+          <div className="flex items-center gap-6">
+            <Avvvatars
+              value={userData.profile_image}
+              style="shape"
+              size={96}
+              border
+              borderColor="#ffffff"
+              // borderColor="#adcf56"
+            />
+            {/* <img
             src="/default-profile.png"
             alt="Profile"
             className="w-24 h-24 rounded-full object-cover border"
           /> */}
+            <div>
+              <h2 className="text-2xl font-bold">{userData.nickname}</h2>
+            </div>
+          </div>
           <div>
-            <h2 className="text-2xl font-bold">{userData.nickname}</h2>
+            {/* PC에서는 텍스트 버튼, 모바일에서는 아이콘 버튼 */}
+            <button
+              className="hidden md:block px-4 py-2  bg-[#cf9056]  text-[#ffffff] rounded-md hover:bg-[#af753f] transition"
+              onClick={() => navigate('/li/user/profile')}
+            >
+              <span className="font-bold">프로필 수정</span>
+            </button>
+            <button
+              className="md:hidden p-2  hover:text-[#0c0c07]"
+              title="프로필 설정"
+            >
+              <Settings
+                size={24}
+                onClick={() => navigate('/li/user/profile')}
+              />
+            </button>
           </div>
         </div>
-        <div>
-          {/* PC에서는 텍스트 버튼, 모바일에서는 아이콘 버튼 */}
+
+        {/* 메뉴 탭 */}
+        <div className="flex border-b mb-4 bg-slate-50 rounded-t-lg">
           <button
-            className="hidden md:block px-4 py-2 border border-[#272b1c] rounded-md hover:bg-[#e0dad4] transition"
-            onClick={() => navigate('/li/user/profile')}
+            className={`flex-1 py-2 text-center ${
+              ismyPage
+                ? 'border-b-2 border-blue-500 font-semibold bg-[#e0e0db] rounded-t-lg'
+                : 'text-gray-500'
+            }`}
+            onClick={() => navigate('myMoodPosts')}
           >
-            프로필 수정
+            내 게시글
           </button>
           <button
-            className="md:hidden p-2  hover:text-[#0c0c07]"
-            title="프로필 설정"
+            className={`flex-1 py-2 text-center ${
+              isLike
+                ? 'border-b-2 border-blue-500 font-semibold bg-[#e0e0db] rounded-t-lg'
+                : 'text-gray-500'
+            }`}
+            onClick={() => navigate('likes')}
           >
-            <Settings size={24} onClick={() => navigate('/li/user/profile')} />
+            좋아요
+          </button>
+          <button
+            className={`flex-1 py-2 text-center ${
+              isBookmark
+                ? 'border-b-2 border-blue-500 font-semibold bg-[#e0e0db] rounded-t-lg'
+                : 'text-gray-500'
+            }`}
+            onClick={() => navigate('marks')}
+          >
+            북마크
           </button>
         </div>
-      </div>
-
-      {/* 메뉴 탭 */}
-      <div className="flex border-b mb-4">
-        <button
-          className={`flex-1 py-2 text-center ${
-            ismyPage
-              ? 'border-b-2 border-blue-500 font-semibold'
-              : 'text-gray-500'
-          }`}
-          onClick={() => navigate('myMoodPosts')}
-        >
-          내 게시글
-        </button>
-        <button
-          className={`flex-1 py-2 text-center ${
-            isLike
-              ? 'border-b-2 border-blue-500 font-semibold'
-              : 'text-gray-500'
-          }`}
-          onClick={() => navigate('likes')}
-        >
-          좋아요
-        </button>
-        <button
-          className={`flex-1 py-2 text-center ${
-            isBookmark
-              ? 'border-b-2 border-blue-500 font-semibold'
-              : 'text-gray-500'
-          }`}
-          onClick={() => navigate('marks')}
-        >
-          북마크
-        </button>
       </div>
 
       <div className="fixed bottom-8 right-8">

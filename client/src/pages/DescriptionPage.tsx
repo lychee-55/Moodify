@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import Avvvatars from 'avvvatars-react';
 import MusicInfo from '../components/postItems/MusicInfo';
@@ -45,6 +45,23 @@ export default function DescriptionPage({ postId, onClose, fetchUrl }: Props) {
 
   const [isPortrait, setIsPortrait] = useState<boolean | null>(null);
 
+  // 🟡 pastelColors 정의
+  const pastelColors = [
+    '#FADADD', // 연한 핑크
+    '#D1F2EB', // 연한 민트
+    '#FFFACD', // 연한 노랑
+    '#E0BBE4', // 연한 라일락
+    '#B5EAD7', // 연한 그린
+    '#FFDAC1', // 연한 살구
+    '#CDE7F0', // 연한 블루
+  ];
+
+  // 🟡 아바타 배경 색상 useMemo로 지정
+  const avatarBackgroundColor = useMemo(() => {
+    const randomIndex = Math.floor(Math.random() * pastelColors.length);
+    return pastelColors[randomIndex];
+  }, []);
+
   useEffect(() => {
     const fetchPostDetail = async () => {
       try {
@@ -54,11 +71,6 @@ export default function DescriptionPage({ postId, onClose, fetchUrl }: Props) {
         setPost(response.data.data);
         console.log('프론트에서 받은 response.data입니다.:::', response.data);
 
-        // console.log(
-        //   '프론트의 description post 데이터 내용입니다::',
-        //   post.likes,
-        // );
-        // 이미지 비율 계산
         if (response.data.data.imageUrl === null) {
           setIsImageNull(true);
           return;
@@ -102,16 +114,19 @@ export default function DescriptionPage({ postId, onClose, fetchUrl }: Props) {
         <div
           className={`w-full sm:w-1/2 ${
             isPortrait === null ? 'h-96' : isPortrait ? 'h-128' : 'h-96'
-          } relative flex items-center justify-center overflow-hidden bg-black order-2 md:order-1`}
+          } relative flex items-center justify-center overflow-hidden ${
+            isImageNull ? '' : 'bg-black'
+          } order-2 md:order-1`}
+          style={isImageNull ? { backgroundColor: avatarBackgroundColor } : {}}
         >
           {isImageNull ? (
-            <div className="w-24 h-24 flex items-center justify-center bg-white rounded-full">
+            <div className=" flex items-center justify-center bg-white rounded-full">
               <Avvvatars
                 value={post.user?.profileImage || post.user?.nickname}
                 style="shape"
                 size={150}
-                border
-                borderColor="#ffffff"
+                // border
+                // borderColor="#ffffff"
               />
             </div>
           ) : (
@@ -158,149 +173,5 @@ export default function DescriptionPage({ postId, onClose, fetchUrl }: Props) {
         </div>
       </div>
     </div>
-    // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    //   <div className="bg-white rounded-lg overflow-hidden max-w-4xl w-full max-h-[90vh] flex">
-    //     {/* 왼쪽 이미지 */}
-    //     {/* <div className="w-1/2 h-96 relative flex items-center justify-center overflow-hidden bg-black"> 기존 블러처리만 적용한 값 */}
-    //     <div
-    //       className={`w-1/2 ${
-    //         isPortrait === null ? 'h-96' : isPortrait ? 'h-128' : 'h-96'
-    //       } relative flex items-center justify-center overflow-hidden bg-black`}
-    //     >
-    //       {isImageNull ? (
-    //         <div className="w-24 h-24 flex items-center justify-center bg-white rounded-full">
-    //           <Avvvatars
-    //             value={post.user?.profileImage || post.user?.nickname}
-    //             style="shape"
-    //             size={150}
-    //             border
-    //             borderColor="#ffffff"
-    //           />
-    //         </div>
-    //       ) : (
-    //         <>
-    //           {/* 블러 배경 */}
-    //           <img
-    //             src={`${process.env.REACT_APP_API_SERVER}${post.imageUrl}`}
-    //             alt="블러 배경"
-    //             className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 z-0"
-    //           />
-    //           {/* 실제 이미지 */}
-    //           <img
-    //             src={`${process.env.REACT_APP_API_SERVER}${post.imageUrl}`}
-    //             alt="게시글 이미지"
-    //             className="relative max-w-full max-h-full object-contain z-10"
-    //           />
-    //         </>
-    //       )}
-    //     </div>
-
-    //     {/* 오른쪽 컨텐츠 */}
-    //     <div className="w-1/2 p-6 flex flex-col">
-    //       <HeaderSection
-    //         profileImage={post.user.profileImage}
-    //         nickname={post.user.nickname}
-    //         title={post.title}
-    //         postId={post.postId}
-    //         isLiked={post.isLiked}
-    //         likes={post.likes}
-    //         isBookmarked={post.isBookmarked}
-    //         onClose={handleClose}
-    //       />
-
-    //       <div className="mb-6 flex-grow overflow-y-auto">
-    //         <p className="text-gray-800 whitespace-pre-line">{post.content}</p>
-    //       </div>
-
-    //       <MusicInfo
-    //         title={post.music.title}
-    //         artist={post.music.artist}
-    //         coverImage={post.music.coverImage}
-    //       />
-    //     </div>
-    //   </div>
-    // </div>
-
-    // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    //   <div className="bg-white rounded-lg overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col lg:flex-row">
-    //     {/* 상단 영역 (모바일에서 상단, 데스크탑에선 왼쪽) */}
-    //     <div
-    //       className={`w-full lg:w-1/2 ${
-    //         isPortrait === null ? 'h-96' : isPortrait ? 'h-128' : 'h-96'
-    //       } relative flex items-center justify-center overflow-hidden bg-black`}
-    //     >
-    //       {isImageNull ? (
-    //         <div className="w-24 h-24 flex items-center justify-center bg-white rounded-full">
-    //           <Avvvatars
-    //             value={post.user?.profileImage || post.user?.nickname}
-    //             style="shape"
-    //             size={150}
-    //             border
-    //             borderColor="#ffffff"
-    //           />
-    //         </div>
-    //       ) : (
-    //         <>
-    //           {/* 블러 배경 */}
-    //           <img
-    //             src={`${process.env.REACT_APP_API_SERVER}${post.imageUrl}`}
-    //             alt="블러 배경"
-    //             className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 z-0"
-    //           />
-    //           {/* 실제 이미지 */}
-    //           <img
-    //             src={`${process.env.REACT_APP_API_SERVER}${post.imageUrl}`}
-    //             alt="게시글 이미지"
-    //             className="relative max-w-full max-h-full object-contain z-10"
-    //           />
-    //         </>
-    //       )}
-    //     </div>
-
-    //     {/* 콘텐츠 영역 (모바일에선 하단, 데스크탑에선 오른쪽) */}
-    //     <div className="w-full lg:w-1/2 p-4 flex flex-col">
-    //       {/* 상단 유저 정보 및 버튼 */}
-    //       <div className="flex items-start justify-between mb-4">
-    //         <div className="flex-shrink-0 mr-3">
-    //           <Avvvatars
-    //             value={post.user.profileImage}
-    //             style="shape"
-    //             size={48}
-    //           />
-    //         </div>
-    //         <div className="flex-grow">
-    //           <h2 className="text-xl font-bold">{post.title}</h2>
-    //           <p className="text-sm text-gray-600">@{post.user.nickname}</p>
-    //         </div>
-    //         <div className="flex content-center space-x-4">
-    //           <HeartButton
-    //             postId={post.postId}
-    //             isLiked={post.isLiked}
-    //             likes={post.likes}
-    //           />
-    //           <BookmarkButton
-    //             postId={post.postId}
-    //             initialIsBookmarked={post.isBookmarked}
-    //           />
-    //           <button onClick={handleClose}>
-    //             <X size={20} />
-    //           </button>
-    //         </div>
-    //       </div>
-
-    //       {/* 본문 */}
-    //       <div className="mb-6 flex-grow overflow-y-auto">
-    //         <p className="text-gray-800 whitespace-pre-line">{post.content}</p>
-    //       </div>
-
-    //       {/* 음악 정보 */}
-    //       <MusicInfo
-    //         title={post.music.title}
-    //         artist={post.music.artist}
-    //         coverImage={post.music.coverImage}
-    //       />
-    //     </div>
-    //   </div>
-    // </div>
   );
 }
