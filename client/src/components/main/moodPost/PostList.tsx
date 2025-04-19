@@ -109,7 +109,7 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
   }, [hasMore, fetchUrl]); // fetchUrl도 여기에 포함
 
   return (
-    <div className="mx-auto px-4 w-full max-w-full">
+    <div className="mx-auto px-4 md:px-14 lg:px-10 w-full max-w-full">
       <div
         // className={`
         //   grid gap-4
@@ -122,7 +122,7 @@ export default function PostList({ fetchUrl, queryParams }: PostListProps) {
         className={`
           grid gap-4
           grid-cols-2
-          sm:grid-cols-3
+          sm:grid-cols-3 
           md:grid-cols-3
           lg:grid-cols-4
           w-full max-w-screen-lg mx-auto

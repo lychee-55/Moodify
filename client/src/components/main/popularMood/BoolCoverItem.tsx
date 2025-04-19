@@ -1,14 +1,19 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { Book } from '../../../types/post';
 import Avvvatars from 'avvvatars-react';
+import DescriptionPage from '../../../pages/DescriptionPage';
+interface Props {
+  book: Book;
+  onClick: () => void;
+}
 
-export default function BookCoverItem({ book }: { book: Book }) {
+export default function BookCoverItem({ book, onClick }: Props) {
   const [imageError, setImageError] = useState(false);
   const avatarContainerRef = useRef<HTMLDivElement>(null);
   const [avatarSize, setAvatarSize] = useState(180); // 기본 크기
 
   const getImageUrl = (): string | undefined => {
-    if (!book.post_image) return undefined;
+    if (!book.post_image) return book.author.nickname;
     return book.post_image.startsWith('http')
       ? book.post_image
       : `${process.env.REACT_APP_API_SERVER}${book.post_image}`;
@@ -31,7 +36,10 @@ export default function BookCoverItem({ book }: { book: Book }) {
   }, []);
 
   return (
-    <div className="book-cover w-[230px] mx-auto transition-all duration-300 hover:scale-105">
+    <div
+      className="book-cover w-[230px] mx-auto transition-all duration-300 hover:scale-105 cursor-pointer"
+      onClick={onClick}
+    >
       {/* 책 커버 이미지 또는 아바타 */}
       {showImage ? (
         <img

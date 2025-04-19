@@ -221,7 +221,13 @@ export default function ProfileEditForm() {
               }`}
             >
               <div className="flex flex-col items-center">
-                <Avvvatars value={avatarSeed} style="shape" size={140} />
+                <Avvvatars
+                  value={avatarSeed}
+                  style="shape"
+                  size={140}
+                  border
+                  borderColor="#ffffff"
+                />
               </div>
 
               {isEditing && (
