@@ -12,6 +12,9 @@ module.exports = {
         128: '32rem', // 512px
         // 원하는 크기 추가
       },
+      animation: {
+        'spin-slow': 'spin 6s linear infinite',
+      },
     },
   },
   plugins: [],

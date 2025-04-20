@@ -9,6 +9,7 @@ import {
   CheckCircle,
   Edit,
   ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import Avvvatars from 'avvvatars-react';
 import { useSelector } from 'react-redux';
@@ -17,6 +18,7 @@ import PasswordInput from '../components/inputs/Passwordinput';
 import useUserData from '../hook/useUserData';
 import { RootState } from '../store/store';
 import axios from 'axios';
+import DeleteUserBtn from '../components/authComp/DeleteUserBtn';
 
 export default function ProfileEditForm() {
   const { userData, updateUserProfile } = useUserData();
@@ -417,6 +419,17 @@ export default function ProfileEditForm() {
                   >
                     변경 내용 저장
                   </button>
+                  <DeleteUserBtn />
+                  {/* <button
+                    type="button"
+                    // onClick={toggleEdit}
+                    className="px-6 py-3 bg-gray-100 hover:bg-red-500 text-white rounded-md text-sm font-medium hover:text-red-500 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-400 right-0 hover:text-white">
+                      회원탈퇴
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </div>
+                  </button> */}
                 </>
               )}
             </div>
