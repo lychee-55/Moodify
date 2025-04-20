@@ -166,6 +166,7 @@ export default function DescriptionPage({ postId, onClose, fetchUrl }: Props) {
           </div>
 
           <MusicInfo
+            postId={post.postId}
             title={post.music.title}
             artist={post.music.artist}
             coverImage={post.music.coverImage}
