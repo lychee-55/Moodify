@@ -25,8 +25,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // 정적 
 // 1. CORS 설정 (프론트엔드 localhost:3000 허용)
 app.use(
   cors({
-    origin: 'http://localhost:3000',
-    // origin: 'http://43.201.82.42',
+    // origin: 'http://localhost:3000',
+    // origin: 'http://43.201.82.42',//이전 배포
+    origin: 'http://43.203.244.251',
     credentials: true, // 쿠키 전송 허용
   }),
 );
@@ -80,8 +81,8 @@ db.sequelize
     // console.log('✅ Sequelize 모델 목록:', db.sequelize.models);
 
     app.listen(PORT, () => {
-      console.log(`Server running on port http://localhost:${PORT}`);
-      // console.log(`Current environment: ${process.env.NODE_ENV}`);
+      // console.log(`Server running on port http://localhost:${PORT}`);
+      console.log(`Current environment: ${process.env.NODE_ENV}`);
     });
   })
   .catch(err => {
